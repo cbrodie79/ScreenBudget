@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		405AF0FB304FABFA00D7A1A6 /* ScreenGaugeReportExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 405AF0EF304FABF900D7A1A6 /* ScreenGaugeReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		40DDB3323054DAED00D6CA9A /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40DDB3313054DAED00D6CA9A /* DeviceActivity.framework */; };
+		40DDB33A3054DAED00D6CA9A /* ScreenBudgetMonitorExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 40DDB32F3054DAED00D6CA9A /* ScreenBudgetMonitorExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		40DDB3473054E67D00D6CA9A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40DDB3463054E67D00D6CA9A /* WidgetKit.framework */; };
+		40DDB3493054E67D00D6CA9A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 40DDB3483054E67D00D6CA9A /* SwiftUI.framework */; };
+		40DDB3563054E67F00D6CA9A /* ScreenBudgetWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 40DDB3453054E67D00D6CA9A /* ScreenBudgetWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		405AF08A304F3D7700D7A1A6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,17 +30,105 @@
 			remoteGlobalIDString = 405AF07B304F3D7500D7A1A6;
 			remoteInfo = "Screen Time Wheel";
 		};
+		405AF0F9304FABFA00D7A1A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 405AF074304F3D7500D7A1A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 405AF0EE304FABF900D7A1A6;
+			remoteInfo = ScreenGaugeReportExtension;
+		};
+		40DDB3383054DAED00D6CA9A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 405AF074304F3D7500D7A1A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40DDB32E3054DAED00D6CA9A;
+			remoteInfo = ScreenBudgetMonitorExtension;
+		};
+		40DDB3543054E67F00D6CA9A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 405AF074304F3D7500D7A1A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40DDB3443054E67D00D6CA9A;
+			remoteInfo = ScreenBudgetWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		405AF0FC304FABFA00D7A1A6 /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				405AF0FB304FABFA00D7A1A6 /* ScreenGaugeReportExtension.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB33F3054DAED00D6CA9A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				40DDB33A3054DAED00D6CA9A /* ScreenBudgetMonitorExtension.appex in Embed Foundation Extensions */,
+				40DDB3563054E67F00D6CA9A /* ScreenBudgetWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		405AF07C304F3D7500D7A1A6 /* Screen Time Wheel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Screen Time Wheel.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		405AF089304F3D7700D7A1A6 /* Screen Time WheelTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Screen Time WheelTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		405AF093304F3D7700D7A1A6 /* Screen Time WheelUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Screen Time WheelUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		405AF0EF304FABF900D7A1A6 /* ScreenGaugeReportExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = ScreenGaugeReportExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		40DDB32F3054DAED00D6CA9A /* ScreenBudgetMonitorExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScreenBudgetMonitorExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		40DDB3313054DAED00D6CA9A /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DeviceActivity.framework; path = System/Library/Frameworks/DeviceActivity.framework; sourceTree = SDKROOT; };
+		40DDB3453054E67D00D6CA9A /* ScreenBudgetWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScreenBudgetWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		40DDB3463054E67D00D6CA9A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		40DDB3483054E67D00D6CA9A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		40DDB35B3054E71500D6CA9A /* ScreenBudgetWidgetExtensionDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScreenBudgetWidgetExtensionDebug.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		405AF0FF304FABFA00D7A1A6 /* Exceptions for "ScreenGaugeReportExtension" folder in "ScreenGaugeReportExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 405AF0EE304FABF900D7A1A6 /* ScreenGaugeReportExtension */;
+		};
+		40DDB32A3053B35B00D6CA9A /* Exceptions for "Screen Time Wheel" folder in "ScreenGaugeReportExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppGroup.swift,
+			);
+			target = 405AF0EE304FABF900D7A1A6 /* ScreenGaugeReportExtension */;
+		};
+		40DDB33B3054DAED00D6CA9A /* Exceptions for "ScreenBudgetMonitorExtension" folder in "ScreenBudgetMonitorExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 40DDB32E3054DAED00D6CA9A /* ScreenBudgetMonitorExtension */;
+		};
+		40DDB3573054E67F00D6CA9A /* Exceptions for "ScreenBudgetWidget" folder in "ScreenBudgetWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 40DDB3443054E67D00D6CA9A /* ScreenBudgetWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		405AF07E304F3D7500D7A1A6 /* Screen Time Wheel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				40DDB32A3053B35B00D6CA9A /* Exceptions for "Screen Time Wheel" folder in "ScreenGaugeReportExtension" target */,
+			);
 			path = "Screen Time Wheel";
 			sourceTree = "<group>";
 		};
@@ -43,6 +140,30 @@
 		405AF096304F3D7700D7A1A6 /* Screen Time WheelUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Screen Time WheelUITests";
+			sourceTree = "<group>";
+		};
+		405AF0F0304FABFA00D7A1A6 /* ScreenGaugeReportExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				405AF0FF304FABFA00D7A1A6 /* Exceptions for "ScreenGaugeReportExtension" folder in "ScreenGaugeReportExtension" target */,
+			);
+			path = ScreenGaugeReportExtension;
+			sourceTree = "<group>";
+		};
+		40DDB3333054DAED00D6CA9A /* ScreenBudgetMonitorExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				40DDB33B3054DAED00D6CA9A /* Exceptions for "ScreenBudgetMonitorExtension" folder in "ScreenBudgetMonitorExtension" target */,
+			);
+			path = ScreenBudgetMonitorExtension;
+			sourceTree = "<group>";
+		};
+		40DDB34A3054E67D00D6CA9A /* ScreenBudgetWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				40DDB3573054E67F00D6CA9A /* Exceptions for "ScreenBudgetWidget" folder in "ScreenBudgetWidgetExtension" target */,
+			);
+			path = ScreenBudgetWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,15 +190,44 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		405AF0EC304FABF900D7A1A6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB32C3054DAED00D6CA9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40DDB3323054DAED00D6CA9A /* DeviceActivity.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB3423054E67D00D6CA9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40DDB3493054E67D00D6CA9A /* SwiftUI.framework in Frameworks */,
+				40DDB3473054E67D00D6CA9A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		405AF073304F3D7500D7A1A6 = {
 			isa = PBXGroup;
 			children = (
+				40DDB35B3054E71500D6CA9A /* ScreenBudgetWidgetExtensionDebug.entitlements */,
 				405AF07E304F3D7500D7A1A6 /* Screen Time Wheel */,
 				405AF08C304F3D7700D7A1A6 /* Screen Time WheelTests */,
 				405AF096304F3D7700D7A1A6 /* Screen Time WheelUITests */,
+				405AF0F0304FABFA00D7A1A6 /* ScreenGaugeReportExtension */,
+				40DDB3333054DAED00D6CA9A /* ScreenBudgetMonitorExtension */,
+				40DDB34A3054E67D00D6CA9A /* ScreenBudgetWidget */,
+				40DDB3303054DAED00D6CA9A /* Frameworks */,
 				405AF07D304F3D7500D7A1A6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,8 +238,21 @@
 				405AF07C304F3D7500D7A1A6 /* Screen Time Wheel.app */,
 				405AF089304F3D7700D7A1A6 /* Screen Time WheelTests.xctest */,
 				405AF093304F3D7700D7A1A6 /* Screen Time WheelUITests.xctest */,
+				405AF0EF304FABF900D7A1A6 /* ScreenGaugeReportExtension.appex */,
+				40DDB32F3054DAED00D6CA9A /* ScreenBudgetMonitorExtension.appex */,
+				40DDB3453054E67D00D6CA9A /* ScreenBudgetWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		40DDB3303054DAED00D6CA9A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				40DDB3313054DAED00D6CA9A /* DeviceActivity.framework */,
+				40DDB3463054E67D00D6CA9A /* WidgetKit.framework */,
+				40DDB3483054E67D00D6CA9A /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -102,10 +265,15 @@
 				405AF078304F3D7500D7A1A6 /* Sources */,
 				405AF079304F3D7500D7A1A6 /* Frameworks */,
 				405AF07A304F3D7500D7A1A6 /* Resources */,
+				405AF0FC304FABFA00D7A1A6 /* Embed ExtensionKit Extensions */,
+				40DDB33F3054DAED00D6CA9A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				405AF0FA304FABFA00D7A1A6 /* PBXTargetDependency */,
+				40DDB3393054DAED00D6CA9A /* PBXTargetDependency */,
+				40DDB3553054E67F00D6CA9A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				405AF07E304F3D7500D7A1A6 /* Screen Time Wheel */,
@@ -163,6 +331,72 @@
 			productReference = 405AF093304F3D7700D7A1A6 /* Screen Time WheelUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		405AF0EE304FABF900D7A1A6 /* ScreenGaugeReportExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 405AF100304FABFA00D7A1A6 /* Build configuration list for PBXNativeTarget "ScreenGaugeReportExtension" */;
+			buildPhases = (
+				405AF0EB304FABF900D7A1A6 /* Sources */,
+				405AF0EC304FABF900D7A1A6 /* Frameworks */,
+				405AF0ED304FABF900D7A1A6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				405AF0F0304FABFA00D7A1A6 /* ScreenGaugeReportExtension */,
+			);
+			name = ScreenGaugeReportExtension;
+			packageProductDependencies = (
+			);
+			productName = ScreenGaugeReportExtension;
+			productReference = 405AF0EF304FABF900D7A1A6 /* ScreenGaugeReportExtension.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
+		40DDB32E3054DAED00D6CA9A /* ScreenBudgetMonitorExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 40DDB33C3054DAED00D6CA9A /* Build configuration list for PBXNativeTarget "ScreenBudgetMonitorExtension" */;
+			buildPhases = (
+				40DDB32B3054DAED00D6CA9A /* Sources */,
+				40DDB32C3054DAED00D6CA9A /* Frameworks */,
+				40DDB32D3054DAED00D6CA9A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				40DDB3333054DAED00D6CA9A /* ScreenBudgetMonitorExtension */,
+			);
+			name = ScreenBudgetMonitorExtension;
+			packageProductDependencies = (
+			);
+			productName = ScreenBudgetMonitorExtension;
+			productReference = 40DDB32F3054DAED00D6CA9A /* ScreenBudgetMonitorExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		40DDB3443054E67D00D6CA9A /* ScreenBudgetWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 40DDB3583054E67F00D6CA9A /* Build configuration list for PBXNativeTarget "ScreenBudgetWidgetExtension" */;
+			buildPhases = (
+				40DDB3413054E67D00D6CA9A /* Sources */,
+				40DDB3423054E67D00D6CA9A /* Frameworks */,
+				40DDB3433054E67D00D6CA9A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				40DDB34A3054E67D00D6CA9A /* ScreenBudgetWidget */,
+			);
+			name = ScreenBudgetWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = ScreenBudgetWidgetExtension;
+			productReference = 40DDB3453054E67D00D6CA9A /* ScreenBudgetWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -170,7 +404,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					405AF07B304F3D7500D7A1A6 = {
@@ -183,6 +417,15 @@
 					405AF092304F3D7700D7A1A6 = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 405AF07B304F3D7500D7A1A6;
+					};
+					405AF0EE304FABF900D7A1A6 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					40DDB32E3054DAED00D6CA9A = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					40DDB3443054E67D00D6CA9A = {
+						CreatedOnToolsVersion = 26.6;
 					};
 				};
 			};
@@ -203,6 +446,9 @@
 				405AF07B304F3D7500D7A1A6 /* Screen Time Wheel */,
 				405AF088304F3D7700D7A1A6 /* Screen Time WheelTests */,
 				405AF092304F3D7700D7A1A6 /* Screen Time WheelUITests */,
+				405AF0EE304FABF900D7A1A6 /* ScreenGaugeReportExtension */,
+				40DDB32E3054DAED00D6CA9A /* ScreenBudgetMonitorExtension */,
+				40DDB3443054E67D00D6CA9A /* ScreenBudgetWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +469,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		405AF091304F3D7700D7A1A6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		405AF0ED304FABF900D7A1A6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB32D3054DAED00D6CA9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB3433054E67D00D6CA9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +520,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		405AF0EB304FABF900D7A1A6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB32B3054DAED00D6CA9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40DDB3413054E67D00D6CA9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +553,21 @@
 			isa = PBXTargetDependency;
 			target = 405AF07B304F3D7500D7A1A6 /* Screen Time Wheel */;
 			targetProxy = 405AF094304F3D7700D7A1A6 /* PBXContainerItemProxy */;
+		};
+		405AF0FA304FABFA00D7A1A6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 405AF0EE304FABF900D7A1A6 /* ScreenGaugeReportExtension */;
+			targetProxy = 405AF0F9304FABFA00D7A1A6 /* PBXContainerItemProxy */;
+		};
+		40DDB3393054DAED00D6CA9A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40DDB32E3054DAED00D6CA9A /* ScreenBudgetMonitorExtension */;
+			targetProxy = 40DDB3383054DAED00D6CA9A /* PBXContainerItemProxy */;
+		};
+		40DDB3553054E67F00D6CA9A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40DDB3443054E67D00D6CA9A /* ScreenBudgetWidgetExtension */;
+			targetProxy = 40DDB3543054E67F00D6CA9A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -395,11 +698,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Screen Time Wheel/Screen Time WheelDebug.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = QLAP24PZCK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Screen Budget";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -423,11 +728,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Screen Time Wheel/Screen Time Wheel.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = QLAP24PZCK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Screen Budget";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -518,6 +825,181 @@
 			};
 			name = Release;
 		};
+		405AF0FD304FABFA00D7A1A6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ScreenGaugeReportExtension/ScreenGaugeReportExtensionDebug.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = QLAP24PZCK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScreenGaugeReportExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScreenGaugeReportExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Noko.Screen-Time-Wheel.ScreenGaugeReportExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		405AF0FE304FABFA00D7A1A6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ScreenGaugeReportExtension/ScreenGaugeReportExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10;
+				DEVELOPMENT_TEAM = QLAP24PZCK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScreenGaugeReportExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScreenGaugeReportExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Noko.Screen-Time-Wheel.ScreenGaugeReportExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		40DDB33D3054DAED00D6CA9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ScreenBudgetMonitorExtension/ScreenBudgetMonitorExtensionDebug.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QLAP24PZCK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScreenBudgetMonitorExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScreenBudgetMonitorExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Noko.Screen-Time-Wheel.ScreenBudgetMonitorExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		40DDB33E3054DAED00D6CA9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ScreenBudgetMonitorExtension/ScreenBudgetMonitorExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QLAP24PZCK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScreenBudgetMonitorExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScreenBudgetMonitorExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Noko.Screen-Time-Wheel.ScreenBudgetMonitorExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		40DDB3593054E67F00D6CA9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ScreenBudgetWidgetExtensionDebug.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QLAP24PZCK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScreenBudgetWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScreenBudgetWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Noko.Screen-Time-Wheel.ScreenBudgetWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		40DDB35A3054E67F00D6CA9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QLAP24PZCK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScreenBudgetWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ScreenBudgetWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Noko.Screen-Time-Wheel.ScreenBudgetWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -553,6 +1035,33 @@
 			buildConfigurations = (
 				405AF0A4304F3D7700D7A1A6 /* Debug */,
 				405AF0A5304F3D7700D7A1A6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		405AF100304FABFA00D7A1A6 /* Build configuration list for PBXNativeTarget "ScreenGaugeReportExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				405AF0FD304FABFA00D7A1A6 /* Debug */,
+				405AF0FE304FABFA00D7A1A6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		40DDB33C3054DAED00D6CA9A /* Build configuration list for PBXNativeTarget "ScreenBudgetMonitorExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40DDB33D3054DAED00D6CA9A /* Debug */,
+				40DDB33E3054DAED00D6CA9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		40DDB3583054E67F00D6CA9A /* Build configuration list for PBXNativeTarget "ScreenBudgetWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40DDB3593054E67F00D6CA9A /* Debug */,
+				40DDB35A3054E67F00D6CA9A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

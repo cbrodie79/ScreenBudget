@@ -7,7 +7,45 @@
 		<key>Screen Time Wheel.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>ScreenBudgetMonitorExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>ScreenBudgetWidgetExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+		<key>ScreenGaugeReportExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>405AF07B304F3D7500D7A1A6</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>405AF0EE304FABF900D7A1A6</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>40DDB32E3054DAED00D6CA9A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>40DDB3443054E67D00D6CA9A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
