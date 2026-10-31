@@ -4,7 +4,12 @@ import WidgetKit
 
 @MainActor
 final class GaugeStore: ObservableObject {
-    @Published var goalMinutes: Double { didSet { save() } }
+    @Published var goalMinutes: Double {
+        didSet {
+            save()
+            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
+        }
+    }
     @Published var usedMinutes: Double { didSet { save() } }
     @Published var demoMode: Bool { didSet { save() } }
 
@@ -45,13 +50,13 @@ final class GaugeStore: ObservableObject {
         if defaults.string(forKey: dateKey) != today {
             defaults.set(today, forKey: dateKey)
             usedMinutes = 0
-            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenGaugeWidget")
+            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
         }
     }
 
     func refreshWidget() {
         save()
-        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenGaugeWidget")
+        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
     }
 
     private func save() {
