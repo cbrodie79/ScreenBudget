@@ -22,6 +22,9 @@ struct ScreenBudgetProvider: TimelineProvider {
     private let goalKey =
         "goalMinutes"
 
+    private let usageDateKey =
+        "widgetUsageDate"
+
     func placeholder(
         in context: Context
     ) -> ScreenBudgetEntry {
@@ -73,12 +76,27 @@ struct ScreenBudgetProvider: TimelineProvider {
             ) ?? Date()
                 .addingTimeInterval(1800)
 
+        // Schedule a zero-usage entry at midnight even if WidgetKit
+        // postpones the next provider refresh.
+        let midnight = Calendar.current.startOfDay(
+            for: Date().addingTimeInterval(24 * 60 * 60)
+        )
+        let tomorrow = Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to: Calendar.current.startOfDay(for: Date())
+        ) ?? midnight
+
+        let resetEntry = ScreenBudgetEntry(
+            date: tomorrow,
+            usageMinutes: 0,
+            goalMinutes: entry.goalMinutes
+        )
+
         let timeline =
             Timeline(
-                entries: [entry],
-                policy: .after(
-                    nextRefresh
-                )
+                entries: [entry, resetEntry],
+                policy: .after(nextRefresh)
             )
 
         completion(timeline)
@@ -92,10 +110,19 @@ struct ScreenBudgetProvider: TimelineProvider {
                 suiteName: appGroup
             )
 
-        let usageMinutes =
-            defaults?.double(
-                forKey: usageKey
-            ) ?? 0
+        // The monitor stores its usage date separately from the app's
+        // goal settings. Never display a counter from a previous day.
+        let savedUsageDate = defaults?.object(
+            forKey: usageDateKey
+        ) as? Date
+
+        let usageMinutes: Double
+        if let savedUsageDate,
+           Calendar.current.isDateInToday(savedUsageDate) {
+            usageMinutes = defaults?.double(forKey: usageKey) ?? 0
+        } else {
+            usageMinutes = 0
+        }
 
         let savedGoal =
             defaults?.double(
