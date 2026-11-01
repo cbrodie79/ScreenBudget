@@ -14,7 +14,7 @@ final class ScreenTimeManager {
 
     // New name separates the cumulative monitor from the old, restarting
     // five-minute monitors. One repeating schedule covers the whole day.
-    static let dailyActivityName = "screenBudget-diagnostic-v5"
+    static let dailyActivityName = "screenBudget-diagnostic-v6"
     static let thresholdPrefix = "dailyUsage-"
     static let armedAtKey = "widgetDiagnosticArmedAt"
     static let diagnosticLogKey = "widgetDiagnosticLog"
@@ -74,22 +74,15 @@ final class ScreenTimeManager {
             WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
         }
 
-        var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
-
-        // Diagnostic test: thresholds count activity after monitoring begins.
-        // We deliberately exclude prior activity to isolate early callbacks.
-        for minutes in stride(from: 5, through: 30, by: 5) {
-            let name = DeviceActivityEvent.Name(
-                "\(Self.thresholdPrefix)\(minutes)"
-            )
-            events[name] = DeviceActivityEvent(
-                threshold: DateComponents(
-                    hour: minutes / 60,
-                    minute: minutes % 60
-                ),
+        // Isolate the monitor: register ONE five-minute threshold only.
+        // Do not include usage from before monitoring was registered.
+        let eventName = DeviceActivityEvent.Name("\(Self.thresholdPrefix)5")
+        let events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [
+            eventName: DeviceActivityEvent(
+                threshold: DateComponents(minute: 5),
                 includesPastActivity: false
             )
-        }
+        ]
 
         let schedule = DeviceActivitySchedule(
             intervalStart: DateComponents(hour: 0, minute: 0),
@@ -107,10 +100,10 @@ final class ScreenTimeManager {
 
         do {
             try center.startMonitoring(activity, during: schedule, events: events)
-            NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=5,10,15,20,25,30 includesPastActivity=false", Self.dailyActivityName, armedAt.description)
+            NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=5 only includesPastActivity=false", Self.dailyActivityName, armedAt.description)
             defaults.set("Registered", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
-            print("ScreenBudget diagnostic monitor started with six five-minute thresholds")
+            print("ScreenBudget diagnostic monitor started with one five-minute threshold")
         } catch {
             defaults.removeObject(forKey: Self.activeActivityKey)
             defaults.set("Start failed: \(error)", forKey: Self.monitorStatusKey)
