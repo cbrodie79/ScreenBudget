@@ -9,12 +9,15 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let usageDateKey = "widgetUsageDate"
     private let activeActivityKey = "widgetMonitorActivity"
 
-    private let dailyActivityName = "screenBudget-diagnostic-v6"
+    private let dailyActivityName = "screenBudget-diagnostic-v7"
     private let thresholdPrefix = "dailyUsage-"
     private let armedAtKey = "widgetDiagnosticArmedAt"
     private let diagnosticLogKey = "widgetDiagnosticLog"
     private let lastEntryKey = "widgetDiagnosticLastEntry"
     private let lastCallbackKey = "widgetDiagnosticLastCallback"
+    private let scheduledStartKey = "widgetDiagnosticScheduledStart"
+    private let scheduledEndKey = "widgetDiagnosticScheduledEnd"
+    private let monitorStatusKey = "widgetDiagnosticMonitorStatus"
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
@@ -32,6 +35,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             return
         }
 
+        defaults.set("Interval started", forKey: monitorStatusKey)
         resetForNewDayIfNeeded(defaults: defaults)
     }
 
@@ -70,21 +74,25 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let elapsedString = elapsed.map { String(format: "%.1f", $0) } ?? "unknown"
         let prior = defaults.double(forKey: usageKey)
 
-        // Historical activity is excluded. A threshold cannot legitimately
-        // exceed the time since the monitor was armed. For a repeating daily
-        // schedule, use midnight as the earliest possible counting start on
-        // subsequent days. Allow 15 seconds for scheduling/clock tolerance.
-        let dayStart = Calendar.current.startOfDay(for: now)
-        let countingStart = (defaults.object(forKey: armedAtKey) as? Date)
-            .map { max($0, dayStart) }
-        let plausible = countingStart.map {
-            now.timeIntervalSince($0) + 15.0 >= Double(thresholdMinutes) * 60.0
-        } ?? false
+        // Since this is a single, nonrepeating test interval with no past
+        // activity included, an event cannot be valid before the scheduled
+        // start or after the scheduled end. Allow 15 seconds of tolerance.
+        let scheduledStart = defaults.object(forKey: scheduledStartKey) as? Date
+        let scheduledEnd = defaults.object(forKey: scheduledEndKey) as? Date
+        let plausible: Bool
+        if let scheduledStart, let scheduledEnd {
+            plausible = now >= scheduledStart &&
+                now <= scheduledEnd.addingTimeInterval(15) &&
+                now.timeIntervalSince(scheduledStart) + 15 >=
+                    Double(thresholdMinutes) * 60
+        } else {
+            plausible = false
+        }
 
         // Diagnostic only: record even rejected, duplicate, or out-of-order
         // callbacks. Keep a bounded history so we can inspect false positives.
         // Keep the most recent 40 entries so the log remains bounded.
-        let verdict = plausible ? "ACCEPTED" : "REJECTED_PREMATURE"
+        let verdict = plausible ? "ACCEPTED" : "REJECTED_OUTSIDE_WINDOW_OR_PREMATURE"
         let message = "at=\(now) event=\(event.rawValue) threshold=\(thresholdMinutes)m elapsedSinceStart=\(elapsedString)s prior=\(Int(prior))m result=\(verdict)"
         NSLog("ScreenBudgetDiagnostic CALLBACK %@", message)
         var log = defaults.stringArray(forKey: diagnosticLogKey) ?? []
