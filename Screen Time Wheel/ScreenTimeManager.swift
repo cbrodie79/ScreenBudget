@@ -14,7 +14,7 @@ final class ScreenTimeManager {
 
     // New name separates the cumulative monitor from the old, restarting
     // five-minute monitors. One repeating schedule covers the whole day.
-    static let dailyActivityName = "screenBudget-diagnostic-v3"
+    static let dailyActivityName = "screenBudget-diagnostic-v4"
     static let thresholdPrefix = "dailyUsage-"
     static let armedAtKey = "widgetDiagnosticArmedAt"
     static let diagnosticLogKey = "widgetDiagnosticLog"
@@ -63,7 +63,7 @@ final class ScreenTimeManager {
         }
 
         // This is a new diagnostic monitor. Clear the old inflated counter
-        // once when migrating from v2 so old values cannot survive the test.
+        // once when migrating to this new threshold configuration so old values cannot survive the test.
         if defaults.string(forKey: Self.activeActivityKey) != Self.dailyActivityName {
             defaults.set(0.0, forKey: Self.usageKey)
             defaults.set(Calendar.current.startOfDay(for: Date()),
@@ -78,7 +78,7 @@ final class ScreenTimeManager {
 
         // Diagnostic test: thresholds count activity after monitoring begins.
         // We deliberately exclude prior activity to isolate early callbacks.
-        for minutes in stride(from: 5, through: 30, by: 5) {
+        for minutes in 1...30 {
             let name = DeviceActivityEvent.Name(
                 "\(Self.thresholdPrefix)\(minutes)"
             )
@@ -107,10 +107,10 @@ final class ScreenTimeManager {
 
         do {
             try center.startMonitoring(activity, during: schedule, events: events)
-            NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=5,10,15,20,25,30 includesPastActivity=false", Self.dailyActivityName, armedAt.description)
+            NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=1...30 includesPastActivity=false", Self.dailyActivityName, armedAt.description)
             defaults.set("Registered", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
-            print("ScreenBudget diagnostic monitor started with 6 thresholds")
+            print("ScreenBudget diagnostic monitor started with 30 one-minute thresholds")
         } catch {
             defaults.removeObject(forKey: Self.activeActivityKey)
             defaults.set("Start failed: \(error)", forKey: Self.monitorStatusKey)
