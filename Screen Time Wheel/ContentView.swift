@@ -103,7 +103,7 @@ struct ContentView: View {
                         refreshDiagnostics()
                     }
 
-                    Text("Registration only confirms monitoring was requested. The extension entry and callback fields update only when iOS executes those methods. The 1–30 minute diagnostic thresholds exclude earlier usage.")
+                    Text("Registration only confirms monitoring was requested. The extension entry and callback fields update only when iOS executes those methods. The 5–30 minute diagnostic thresholds exclude earlier usage. Implausibly early callbacks are logged and rejected.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
