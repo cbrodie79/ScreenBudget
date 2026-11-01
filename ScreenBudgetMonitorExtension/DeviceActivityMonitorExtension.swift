@@ -2,328 +2,77 @@ import DeviceActivity
 import Foundation
 import WidgetKit
 
-final class DeviceActivityMonitorExtension:
-    DeviceActivityMonitor {
+final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
-    private let appGroup =
-        "group.com.example.ScreenGauge"
+    private let appGroup = "group.com.example.ScreenGauge"
+    private let usageKey = "widgetUsageMinutes"
+    private let usageDateKey = "widgetUsageDate"
+    private let activeActivityKey = "widgetMonitorActivity"
 
-    private let usageKey =
-        "widgetUsageMinutes"
+    private let dailyActivityName = "screenBudget-daily-v2"
+    private let thresholdPrefix = "dailyUsage-"
 
-    private let usageDateKey =
-        "widgetUsageDate"
+    override func intervalDidStart(for activity: DeviceActivityName) {
+        super.intervalDidStart(for: activity)
 
-    private let generationKey =
-        "widgetMonitorGeneration"
-
-    private let armedAtKey =
-        "widgetMonitorArmedAt"
-
-    private let activeActivityKey =
-        "widgetMonitorActivity"
-
-    private let minutesPerTick =
-        5.0
-
-    /*
-     A legitimate 5-minute usage event physically
-     cannot happen only a few seconds after we
-     armed a fresh 5-minute threshold.
-
-     Give the callback a little tolerance.
-    */
-
-    private let minimumAcceptedWallTime:
-        TimeInterval = 4 * 60
-
-    private let center =
-        DeviceActivityCenter()
-
-    // MARK: Interval started
-
-    override func intervalDidStart(
-        for activity: DeviceActivityName
-    ) {
-
-        super.intervalDidStart(
-            for: activity
-        )
-
-        guard let defaults =
-            UserDefaults(
-                suiteName: appGroup
-            )
-        else {
+        guard activity.rawValue == dailyActivityName,
+              let defaults = UserDefaults(suiteName: appGroup),
+              defaults.string(forKey: activeActivityKey) == dailyActivityName else {
             return
         }
 
-        resetForNewDayIfNeeded(
-            defaults: defaults
-        )
+        resetForNewDayIfNeeded(defaults: defaults)
     }
-
-    // MARK: Five-minute threshold
 
     override func eventDidReachThreshold(
         _ event: DeviceActivityEvent.Name,
         activity: DeviceActivityName
     ) {
+        super.eventDidReachThreshold(event, activity: activity)
 
-        super.eventDidReachThreshold(
-            event,
-            activity: activity
-        )
-
-        guard let defaults =
-            UserDefaults(
-                suiteName: appGroup
-            )
-        else {
+        guard activity.rawValue == dailyActivityName,
+              let defaults = UserDefaults(suiteName: appGroup),
+              defaults.string(forKey: activeActivityKey) == dailyActivityName,
+              event.rawValue.hasPrefix(thresholdPrefix),
+              let thresholdMinutes = Int(
+                event.rawValue.dropFirst(thresholdPrefix.count)
+              ),
+              thresholdMinutes >= 5,
+              thresholdMinutes <= 600,
+              thresholdMinutes % 5 == 0 else {
             return
         }
 
-        resetForNewDayIfNeeded(
-            defaults: defaults
-        )
+        resetForNewDayIfNeeded(defaults: defaults)
 
-        // ------------------------------
-        // 1. Reject stale callbacks
-        // ------------------------------
+        // Never increment by a fixed amount: callbacks can be delayed or
+        // delivered out of order. The event name is the cumulative minimum.
+        let current = defaults.double(forKey: usageKey)
+        let newTotal = max(current, Double(thresholdMinutes))
 
-        guard let expectedActivity =
-            defaults.string(
-                forKey: activeActivityKey
-            )
-        else {
+        guard newTotal > current else {
             return
         }
 
-        guard activity.rawValue ==
-                expectedActivity
-        else {
+        defaults.set(newTotal, forKey: usageKey)
+        defaults.set(Calendar.current.startOfDay(for: Date()),
+                     forKey: usageDateKey)
 
-            print(
-                "Ignoring stale ScreenBudget callback"
-            )
-
-            return
-        }
-
-        // ------------------------------
-        // 2. Check how recently it was armed
-        // ------------------------------
-
-        guard let armedAt =
-            defaults.object(
-                forKey: armedAtKey
-            ) as? Date
-        else {
-
-            rearmFreshEvent(
-                replacing: activity,
-                defaults: defaults
-            )
-
-            return
-        }
-
-        let elapsed =
-            Date().timeIntervalSince(
-                armedAt
-            )
-
-        // ------------------------------
-        // 3. Detect bogus early callback
-        // ------------------------------
-
-        if elapsed < minimumAcceptedWallTime {
-
-            print(
-                """
-                Premature DeviceActivity callback.
-                Armed only \(elapsed) seconds ago.
-                Ignoring callback.
-                """
-            )
-
-            return
-        }
-
-        // ------------------------------
-        // 4. Accept one 5-minute unit
-        // ------------------------------
-
-        let current =
-            defaults.double(
-                forKey: usageKey
-            )
-
-        let newTotal =
-            current + minutesPerTick
-
-        defaults.set(
-            newTotal,
-            forKey: usageKey
-        )
-
-        defaults.set(
-            Date(),
-            forKey: usageDateKey
-        )
-
-        print(
-            "Accepted usage tick: \(newTotal) minutes"
-        )
-
-        WidgetCenter.shared
-            .reloadAllTimelines()
-
-        // ------------------------------
-        // 5. Arm the next 5-minute unit
-        // ------------------------------
-
-        rearmFreshEvent(
-            replacing: activity,
-            defaults: defaults
-        )
+        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
+        print("ScreenBudget daily usage reached \(Int(newTotal)) minutes")
     }
 
-    // MARK: Re-arm
+    private func resetForNewDayIfNeeded(defaults: UserDefaults) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
 
-    private func rearmFreshEvent(
-        replacing oldActivity:
-            DeviceActivityName,
-        defaults: UserDefaults
-    ) {
-
-        center.stopMonitoring(
-            [oldActivity]
-        )
-
-        let oldGeneration =
-            defaults.integer(
-                forKey: generationKey
-            )
-
-        let generation =
-            oldGeneration + 1
-
-        let activity =
-            DeviceActivityName(
-                "screenBudget-\(generation)"
-            )
-
-        let eventName =
-            DeviceActivityEvent.Name(
-                "fiveMinutes-\(generation)"
-            )
-
-        let event =
-            DeviceActivityEvent(
-                threshold: DateComponents(
-                    minute: 5
-                ),
-                includesPastActivity: false
-            )
-
-        let schedule =
-            DeviceActivitySchedule(
-                intervalStart: DateComponents(
-                    hour: 0,
-                    minute: 0
-                ),
-                intervalEnd: DateComponents(
-                    hour: 23,
-                    minute: 59
-                ),
-                repeats: true
-            )
-
-        /*
-         Persist the new identity before starting
-         it so late callbacks from the old generation
-         won't count.
-        */
-
-        defaults.set(
-            generation,
-            forKey: generationKey
-        )
-
-        defaults.set(
-            activity.rawValue,
-            forKey: activeActivityKey
-        )
-
-        defaults.set(
-            Date(),
-            forKey: armedAtKey
-        )
-
-        do {
-            try center.startMonitoring(
-                activity,
-                during: schedule,
-                events: [
-                    eventName: event
-                ]
-            )
-
-            print(
-                "Re-armed generation \(generation)"
-            )
-
-        } catch {
-
-            defaults.removeObject(
-                forKey: activeActivityKey
-            )
-
-            print(
-                "Unable to re-arm ScreenBudget: \(error)"
-            )
-        }
-    }
-
-    // MARK: Daily reset
-
-    private func resetForNewDayIfNeeded(
-        defaults: UserDefaults
-    ) {
-
-        let calendar =
-            Calendar.current
-
-        let today =
-            calendar.startOfDay(
-                for: Date()
-            )
-
-        if let savedDate =
-            defaults.object(
-                forKey: usageDateKey
-            ) as? Date {
-
-            if calendar.isDate(
-                savedDate,
-                inSameDayAs: today
-            ) {
-                return
-            }
+        if let savedDate = defaults.object(forKey: usageDateKey) as? Date,
+           calendar.isDate(savedDate, inSameDayAs: today) {
+            return
         }
 
-        defaults.set(
-            0.0,
-            forKey: usageKey
-        )
-
-        defaults.set(
-            today,
-            forKey: usageDateKey
-        )
-
-        WidgetCenter.shared
-            .reloadAllTimelines()
+        defaults.set(0.0, forKey: usageKey)
+        defaults.set(today, forKey: usageDateKey)
+        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
     }
 }
