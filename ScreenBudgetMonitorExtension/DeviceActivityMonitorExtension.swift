@@ -9,8 +9,10 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let usageDateKey = "widgetUsageDate"
     private let activeActivityKey = "widgetMonitorActivity"
 
-    private let dailyActivityName = "screenBudget-daily-v2"
+    private let dailyActivityName = "screenBudget-diagnostic-v3"
     private let thresholdPrefix = "dailyUsage-"
+    private let armedAtKey = "widgetDiagnosticArmedAt"
+    private let diagnosticLogKey = "widgetDiagnosticLog"
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
@@ -38,12 +40,26 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
                 event.rawValue.dropFirst(thresholdPrefix.count)
               ),
               thresholdMinutes >= 5,
-              thresholdMinutes <= 600,
+              thresholdMinutes <= 30,
               thresholdMinutes % 5 == 0 else {
             return
         }
 
         resetForNewDayIfNeeded(defaults: defaults)
+
+        let now = Date()
+        let elapsed = (defaults.object(forKey: armedAtKey) as? Date)
+            .map { now.timeIntervalSince($0) }
+        let elapsedString = elapsed.map { String(format: "%.1f", $0) } ?? "unknown"
+        let prior = defaults.double(forKey: usageKey)
+
+        // Diagnostic only: record even duplicate and out-of-order callbacks.
+        // Keep the most recent 40 entries so the log remains bounded.
+        let message = "at=\(now) event=\(event.rawValue) threshold=\(thresholdMinutes)m elapsedSinceStart=\(elapsedString)s prior=\(Int(prior))m"
+        NSLog("ScreenBudgetDiagnostic CALLBACK %@", message)
+        var log = defaults.stringArray(forKey: diagnosticLogKey) ?? []
+        log.append(message)
+        defaults.set(Array(log.suffix(40)), forKey: diagnosticLogKey)
 
         // Never increment by a fixed amount: callbacks can be delayed or
         // delivered out of order. The event name is the cumulative minimum.
