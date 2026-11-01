@@ -18,6 +18,8 @@ final class ScreenTimeManager {
     static let thresholdPrefix = "dailyUsage-"
     static let armedAtKey = "widgetDiagnosticArmedAt"
     static let diagnosticLogKey = "widgetDiagnosticLog"
+    static let monitorStatusKey = "widgetDiagnosticMonitorStatus"
+    static let lastCheckKey = "widgetDiagnosticLastChecked"
 
     private let center = DeviceActivityCenter()
 
@@ -46,6 +48,8 @@ final class ScreenTimeManager {
         // a previous startMonitoring call may have failed or been stopped.
         if center.activities.contains(activity) {
             defaults.set(Self.dailyActivityName, forKey: Self.activeActivityKey)
+            defaults.set("Registered", forKey: Self.monitorStatusKey)
+            defaults.set(Date(), forKey: Self.lastCheckKey)
             return
         }
 
@@ -65,6 +69,8 @@ final class ScreenTimeManager {
             defaults.set(Calendar.current.startOfDay(for: Date()),
                          forKey: Self.usageDateKey)
             defaults.set([String](), forKey: Self.diagnosticLogKey)
+            defaults.removeObject(forKey: "widgetDiagnosticLastCallback")
+            defaults.removeObject(forKey: "widgetDiagnosticLastEntry")
             WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
         }
 
@@ -102,9 +108,13 @@ final class ScreenTimeManager {
         do {
             try center.startMonitoring(activity, during: schedule, events: events)
             NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=5,10,15,20,25,30 includesPastActivity=false", Self.dailyActivityName, armedAt.description)
+            defaults.set("Registered", forKey: Self.monitorStatusKey)
+            defaults.set(Date(), forKey: Self.lastCheckKey)
             print("ScreenBudget diagnostic monitor started with 6 thresholds")
         } catch {
             defaults.removeObject(forKey: Self.activeActivityKey)
+            defaults.set("Start failed: \(error)", forKey: Self.monitorStatusKey)
+            defaults.set(Date(), forKey: Self.lastCheckKey)
             NSLog("ScreenBudgetDiagnostic START_FAILED: %@", String(describing: error))
             print("Unable to start ScreenBudget daily monitor: \(error)")
         }
