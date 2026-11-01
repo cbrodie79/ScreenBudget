@@ -14,12 +14,14 @@ final class ScreenTimeManager {
 
     // New name separates the cumulative monitor from the old, restarting
     // five-minute monitors. One repeating schedule covers the whole day.
-    static let dailyActivityName = "screenBudget-diagnostic-v6"
+    static let dailyActivityName = "screenBudget-diagnostic-v7"
     static let thresholdPrefix = "dailyUsage-"
     static let armedAtKey = "widgetDiagnosticArmedAt"
     static let diagnosticLogKey = "widgetDiagnosticLog"
     static let monitorStatusKey = "widgetDiagnosticMonitorStatus"
     static let lastCheckKey = "widgetDiagnosticLastChecked"
+    static let scheduledStartKey = "widgetDiagnosticScheduledStart"
+    static let scheduledEndKey = "widgetDiagnosticScheduledEnd"
 
     private let center = DeviceActivityCenter()
 
@@ -84,26 +86,39 @@ final class ScreenTimeManager {
             )
         ]
 
+        // One-shot future window: the first minute boundary at least two
+        // minutes from now, followed by 45 minutes of monitoring.
+        // Explicit calendar components prevent matching an earlier interval
+        // with the same hour/minute (including around midnight).
+        let calendar = Calendar.current
+        let now = Date()
+        let minuteStart = calendar.dateInterval(of: .minute, for: now)?.start ?? now
+        let scheduledStart = calendar.date(byAdding: .minute, value: 3,
+                                           to: minuteStart) ?? now.addingTimeInterval(180)
+        let scheduledEnd = calendar.date(byAdding: .minute, value: 45,
+                                         to: scheduledStart) ?? scheduledStart.addingTimeInterval(2700)
+        let components: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute]
         let schedule = DeviceActivitySchedule(
-            intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
-            repeats: true
+            intervalStart: calendar.dateComponents(components, from: scheduledStart),
+            intervalEnd: calendar.dateComponents(components, from: scheduledEnd),
+            repeats: false
         )
 
-        // Keep a wall-clock anchor for diagnosing unexpectedly early events.
-        // IncludesPastActivity is false for this experiment: it intentionally
-        // excludes usage before monitoring starts.
-        let armedAt = Date()
+        // Save before registering so callbacks can validate against the
+        // actual future interval, not simply the registration timestamp.
+        let armedAt = now
         defaults.set(armedAt, forKey: Self.armedAtKey)
+        defaults.set(scheduledStart, forKey: Self.scheduledStartKey)
+        defaults.set(scheduledEnd, forKey: Self.scheduledEndKey)
         // A threshold callback may arrive during startMonitoring.
         defaults.set(Self.dailyActivityName, forKey: Self.activeActivityKey)
 
         do {
             try center.startMonitoring(activity, during: schedule, events: events)
-            NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=5 only includesPastActivity=false", Self.dailyActivityName, armedAt.description)
-            defaults.set("Registered", forKey: Self.monitorStatusKey)
+            NSLog("ScreenBudgetDiagnostic START activity=%@ registered=%@ windowStart=%@ windowEnd=%@ events=5 only includesPastActivity=false", Self.dailyActivityName, armedAt.description, scheduledStart.description, scheduledEnd.description)
+            defaults.set("Scheduled", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
-            print("ScreenBudget diagnostic monitor started with one five-minute threshold")
+            print("ScreenBudget future diagnostic window scheduled")
         } catch {
             defaults.removeObject(forKey: Self.activeActivityKey)
             defaults.set("Start failed: \(error)", forKey: Self.monitorStatusKey)
