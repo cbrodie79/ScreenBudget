@@ -14,8 +14,10 @@ final class ScreenTimeManager {
 
     // New name separates the cumulative monitor from the old, restarting
     // five-minute monitors. One repeating schedule covers the whole day.
-    static let dailyActivityName = "screenBudget-daily-v2"
+    static let dailyActivityName = "screenBudget-diagnostic-v3"
     static let thresholdPrefix = "dailyUsage-"
+    static let armedAtKey = "widgetDiagnosticArmedAt"
+    static let diagnosticLogKey = "widgetDiagnosticLog"
 
     private let center = DeviceActivityCenter()
 
@@ -56,12 +58,13 @@ final class ScreenTimeManager {
             center.stopMonitoring(legacyActivities)
         }
 
-        // Old stored ticks were counted since monitor startup, not as
-        // cumulative daily thresholds, so don't mix the two systems.
+        // This is a new diagnostic monitor. Clear the old inflated counter
+        // once when migrating from v2 so old values cannot survive the test.
         if defaults.string(forKey: Self.activeActivityKey) != Self.dailyActivityName {
             defaults.set(0.0, forKey: Self.usageKey)
             defaults.set(Calendar.current.startOfDay(for: Date()),
                          forKey: Self.usageDateKey)
+            defaults.set([String](), forKey: Self.diagnosticLogKey)
             WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
         }
 
@@ -69,7 +72,7 @@ final class ScreenTimeManager {
 
         // Each event fires when total daily activity passes its threshold.
         // An event includes usage before ScreenBudget was opened today.
-        for minutes in stride(from: 5, through: 600, by: 5) {
+        for minutes in stride(from: 5, through: 30, by: 5) {
             let name = DeviceActivityEvent.Name(
                 "\(Self.thresholdPrefix)\(minutes)"
             )
@@ -78,7 +81,7 @@ final class ScreenTimeManager {
                     hour: minutes / 60,
                     minute: minutes % 60
                 ),
-                includesPastActivity: true
+                includesPastActivity: false
             )
         }
 
@@ -88,14 +91,21 @@ final class ScreenTimeManager {
             repeats: true
         )
 
+        // Keep a wall-clock anchor for diagnosing unexpectedly early events.
+        // IncludesPastActivity is false for this experiment: it intentionally
+        // excludes usage before monitoring starts.
+        let armedAt = Date()
+        defaults.set(armedAt, forKey: Self.armedAtKey)
         // A threshold callback may arrive during startMonitoring.
         defaults.set(Self.dailyActivityName, forKey: Self.activeActivityKey)
 
         do {
             try center.startMonitoring(activity, during: schedule, events: events)
-            print("Started cumulative ScreenBudget daily monitor")
+            NSLog("ScreenBudgetDiagnostic START activity=%@ at=%@ events=5,10,15,20,25,30 includesPastActivity=false", Self.dailyActivityName, armedAt.description)
+            print("ScreenBudget diagnostic monitor started with 6 thresholds")
         } catch {
             defaults.removeObject(forKey: Self.activeActivityKey)
+            NSLog("ScreenBudgetDiagnostic START_FAILED: %@", String(describing: error))
             print("Unable to start ScreenBudget daily monitor: \(error)")
         }
     }
