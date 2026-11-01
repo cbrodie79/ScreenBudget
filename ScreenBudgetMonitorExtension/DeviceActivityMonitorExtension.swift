@@ -9,7 +9,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let usageDateKey = "widgetUsageDate"
     private let activeActivityKey = "widgetMonitorActivity"
 
-    private let dailyActivityName = "screenBudget-diagnostic-v4"
+    private let dailyActivityName = "screenBudget-diagnostic-v5"
     private let thresholdPrefix = "dailyUsage-"
     private let armedAtKey = "widgetDiagnosticArmedAt"
     private let diagnosticLogKey = "widgetDiagnosticLog"
@@ -58,8 +58,9 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
               let thresholdMinutes = Int(
                 event.rawValue.dropFirst(thresholdPrefix.count)
               ),
-              thresholdMinutes >= 1,
-              thresholdMinutes <= 30 else {
+              thresholdMinutes >= 5,
+              thresholdMinutes <= 30,
+              thresholdMinutes % 5 == 0 else {
             return
         }
 
@@ -71,13 +72,31 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         let elapsedString = elapsed.map { String(format: "%.1f", $0) } ?? "unknown"
         let prior = defaults.double(forKey: usageKey)
 
-        // Diagnostic only: record even duplicate and out-of-order callbacks.
+        // Historical activity is excluded. A threshold cannot legitimately
+        // exceed the time since the monitor was armed. For a repeating daily
+        // schedule, use midnight as the earliest possible counting start on
+        // subsequent days. Allow 15 seconds for scheduling/clock tolerance.
+        let dayStart = Calendar.current.startOfDay(for: now)
+        let countingStart = (defaults.object(forKey: armedAtKey) as? Date)
+            .map { max($0, dayStart) }
+        let plausible = countingStart.map {
+            now.timeIntervalSince($0) + 15.0 >= Double(thresholdMinutes) * 60.0
+        } ?? false
+
+        // Diagnostic only: record even rejected, duplicate, or out-of-order
+        // callbacks. Keep a bounded history so we can inspect false positives.
         // Keep the most recent 40 entries so the log remains bounded.
-        let message = "at=\(now) event=\(event.rawValue) threshold=\(thresholdMinutes)m elapsedSinceStart=\(elapsedString)s prior=\(Int(prior))m"
+        let verdict = plausible ? "ACCEPTED" : "REJECTED_PREMATURE"
+        let message = "at=\(now) event=\(event.rawValue) threshold=\(thresholdMinutes)m elapsedSinceStart=\(elapsedString)s prior=\(Int(prior))m result=\(verdict)"
         NSLog("ScreenBudgetDiagnostic CALLBACK %@", message)
         var log = defaults.stringArray(forKey: diagnosticLogKey) ?? []
         log.append(message)
         defaults.set(Array(log.suffix(40)), forKey: diagnosticLogKey)
+
+        guard plausible else {
+            NSLog("ScreenBudgetDiagnostic rejected implausible threshold: %@", message)
+            return
+        }
 
         // Never increment by a fixed amount: callbacks can be delayed or
         // delivered out of order. The event name is the cumulative minimum.
