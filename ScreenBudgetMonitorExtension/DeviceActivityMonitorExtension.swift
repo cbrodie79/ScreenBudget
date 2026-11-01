@@ -13,12 +13,21 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let thresholdPrefix = "dailyUsage-"
     private let armedAtKey = "widgetDiagnosticArmedAt"
     private let diagnosticLogKey = "widgetDiagnosticLog"
+    private let lastEntryKey = "widgetDiagnosticLastEntry"
+    private let lastCallbackKey = "widgetDiagnosticLastCallback"
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
 
+        // This proves the extension ran, independent of any threshold.
+        guard let defaults = UserDefaults(suiteName: appGroup) else {
+            NSLog("ScreenBudgetDiagnostic intervalDidStart: App Group unavailable")
+            return
+        }
+        defaults.set("intervalDidStart at \(Date()) for \(activity.rawValue)",
+                     forKey: lastEntryKey)
+
         guard activity.rawValue == dailyActivityName,
-              let defaults = UserDefaults(suiteName: appGroup),
               defaults.string(forKey: activeActivityKey) == dailyActivityName else {
             return
         }
@@ -32,8 +41,18 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     ) {
         super.eventDidReachThreshold(event, activity: activity)
 
+        // Record receipt before validating the activity and event names.
+        // This distinguishes an absent callback from one rejected by guards.
+        guard let defaults = UserDefaults(suiteName: appGroup) else {
+            NSLog("ScreenBudgetDiagnostic callback: App Group unavailable")
+            return
+        }
+        let receipt = "at=\(Date()) activity=\(activity.rawValue) event=\(event.rawValue)"
+        defaults.set(receipt, forKey: lastCallbackKey)
+        defaults.set("eventDidReachThreshold at \(Date())", forKey: lastEntryKey)
+        NSLog("ScreenBudgetDiagnostic RECEIVED %@", receipt)
+
         guard activity.rawValue == dailyActivityName,
-              let defaults = UserDefaults(suiteName: appGroup),
               defaults.string(forKey: activeActivityKey) == dailyActivityName,
               event.rawValue.hasPrefix(thresholdPrefix),
               let thresholdMinutes = Int(
