@@ -70,8 +70,8 @@ final class ScreenTimeManager {
 
         var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
 
-        // Each event fires when total daily activity passes its threshold.
-        // An event includes usage before ScreenBudget was opened today.
+        // Diagnostic test: thresholds count activity after monitoring begins.
+        // We deliberately exclude prior activity to isolate early callbacks.
         for minutes in stride(from: 5, through: 30, by: 5) {
             let name = DeviceActivityEvent.Name(
                 "\(Self.thresholdPrefix)\(minutes)"
