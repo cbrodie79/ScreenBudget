@@ -9,7 +9,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let usageDateKey = "widgetUsageDate"
     private let activeActivityKey = "widgetMonitorActivity"
 
-    private let dailyActivityName = "screenBudget-diagnostic-v5"
+    private let dailyActivityName = "screenBudget-diagnostic-v6"
     private let thresholdPrefix = "dailyUsage-"
     private let armedAtKey = "widgetDiagnosticArmedAt"
     private let diagnosticLogKey = "widgetDiagnosticLog"
@@ -58,9 +58,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
               let thresholdMinutes = Int(
                 event.rawValue.dropFirst(thresholdPrefix.count)
               ),
-              thresholdMinutes >= 5,
-              thresholdMinutes <= 30,
-              thresholdMinutes % 5 == 0 else {
+              thresholdMinutes == 5 else {
             return
         }
 
