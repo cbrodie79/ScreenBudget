@@ -4,6 +4,8 @@ import DeviceActivity
 struct ContentView: View {
 
     @EnvironmentObject private var store: GaugeStore
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var diagnostics = MonitorDiagnostics.read()
 
     private let reportContext =
         DeviceActivityReport.Context("Total Activity")
@@ -85,6 +87,27 @@ struct ContentView: View {
 
                 }
 
+                Section("Monitor diagnostics") {
+                    LabeledContent("Monitor", value: diagnostics.monitorStatus)
+                    LabeledContent("Extension entry", value: diagnostics.lastEntry)
+                    LabeledContent("Last callback", value: diagnostics.lastCallback)
+                    LabeledContent("Widget counter", value: "\(Int(diagnostics.widgetMinutes)) min")
+
+                    if let message = diagnostics.latestEvent {
+                        Text(message)
+                            .font(.caption)
+                            .textSelection(.enabled)
+                    }
+
+                    Button("Refresh diagnostics") {
+                        refreshDiagnostics()
+                    }
+
+                    Text("Registration only confirms monitoring was requested. The extension entry and callback fields update only when iOS executes those methods. The 5–30 minute diagnostic thresholds exclude earlier usage.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 // MARK: - Screen Time Permission
 
                 Section("Screen Time") {
@@ -106,8 +129,47 @@ struct ContentView: View {
 
                 ScreenTimeManager.shared
                     .startMonitoringIfNeeded()
+                refreshDiagnostics()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    refreshDiagnostics()
+                }
             }
         }
+    }
+
+    private func refreshDiagnostics() {
+        diagnostics = MonitorDiagnostics.read()
+    }
+}
+
+private struct MonitorDiagnostics {
+    let monitorStatus: String
+    let lastEntry: String
+    let lastCallback: String
+    let widgetMinutes: Double
+    let latestEvent: String?
+
+    static func read() -> MonitorDiagnostics {
+        guard let defaults = UserDefaults(suiteName: AppGroup.identifier) else {
+            return MonitorDiagnostics(
+                monitorStatus: "App Group unavailable",
+                lastEntry: "Unavailable",
+                lastCallback: "Unavailable",
+                widgetMinutes: 0,
+                latestEvent: nil
+            )
+        }
+        let date = defaults.object(forKey: "widgetUsageDate") as? Date
+        let today = date.map { Calendar.current.isDateInToday($0) } ?? false
+        return MonitorDiagnostics(
+            monitorStatus: defaults.string(forKey: "widgetDiagnosticMonitorStatus") ?? "Not checked",
+            lastEntry: defaults.string(forKey: "widgetDiagnosticLastEntry") ?? "None observed",
+            lastCallback: defaults.string(forKey: "widgetDiagnosticLastCallback") ?? "None observed",
+            widgetMinutes: today ? defaults.double(forKey: "widgetUsageMinutes") : 0,
+            latestEvent: defaults.stringArray(forKey: "widgetDiagnosticLog")?.last
+        )
     }
 }
 
