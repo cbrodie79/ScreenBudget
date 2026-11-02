@@ -89,11 +89,9 @@ struct ContentView: View {
 
                 Section("Monitor diagnostics") {
                     LabeledContent("Monitor", value: diagnostics.monitorStatus)
-                    LabeledContent("Test starts", value: diagnostics.startLabel)
-                    LabeledContent("Test ends", value: diagnostics.endLabel)
                     LabeledContent("Extension entry", value: diagnostics.lastEntry)
                     LabeledContent("Last callback", value: diagnostics.lastCallback)
-                    LabeledContent("Widget counter", value: "\(Int(diagnostics.widgetMinutes)) min")
+                    LabeledContent("Estimated widget usage", value: "\(Int(diagnostics.widgetMinutes)) min")
 
                     if let message = diagnostics.latestEvent {
                         Text(message)
@@ -105,7 +103,7 @@ struct ContentView: View {
                         refreshDiagnostics()
                     }
 
-                    Text("Registration only confirms monitoring was requested. The extension entry and callback fields update only when iOS executes those methods. This one-time diagnostic test begins at the scheduled future time and lasts 45 minutes. It monitors one 5-minute threshold; the widget will not advance beyond 5 minutes. Earlier usage is excluded, and premature callbacks are logged and rejected.")
+                    Text("The widget estimates screen time in five-minute checkpoints. Premature callbacks are rejected and retried once. iOS may delay or miss callbacks; this can undercount actual usage. The accurate total remains in the report above.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -148,8 +146,6 @@ struct ContentView: View {
 
 private struct MonitorDiagnostics {
     let monitorStatus: String
-    let startLabel: String
-    let endLabel: String
     let lastEntry: String
     let lastCallback: String
     let widgetMinutes: Double
@@ -159,8 +155,6 @@ private struct MonitorDiagnostics {
         guard let defaults = UserDefaults(suiteName: AppGroup.identifier) else {
             return MonitorDiagnostics(
                 monitorStatus: "App Group unavailable",
-                startLabel: "Unavailable",
-                endLabel: "Unavailable",
                 lastEntry: "Unavailable",
                 lastCallback: "Unavailable",
                 widgetMinutes: 0,
@@ -168,18 +162,10 @@ private struct MonitorDiagnostics {
             )
         }
         let date = defaults.object(forKey: "widgetUsageDate") as? Date
-        let scheduledStart = defaults.object(forKey: "widgetDiagnosticScheduledStart") as? Date
-        let scheduledEnd = defaults.object(forKey: "widgetDiagnosticScheduledEnd") as? Date
-        let timeFormatter = DateFormatter()
-        timeFormatter.dateStyle = .short
-        timeFormatter.timeStyle = .short
         let monitorStatus = defaults.string(forKey: "widgetDiagnosticMonitorStatus") ?? "Not checked"
-        let effectiveStatus = (scheduledEnd.map { Date() >= $0 } ?? false) && monitorStatus != "Start failed" ? "Test window ended" : monitorStatus
         let today = date.map { Calendar.current.isDateInToday($0) } ?? false
         return MonitorDiagnostics(
-            monitorStatus: effectiveStatus,
-            startLabel: scheduledStart.map { timeFormatter.string(from: $0) } ?? "Not scheduled",
-            endLabel: scheduledEnd.map { timeFormatter.string(from: $0) } ?? "Not scheduled",
+            monitorStatus: monitorStatus,
             lastEntry: defaults.string(forKey: "widgetDiagnosticLastEntry") ?? "None observed",
             lastCallback: defaults.string(forKey: "widgetDiagnosticLastCallback") ?? "None observed",
             widgetMinutes: today ? defaults.double(forKey: "widgetUsageMinutes") : 0,
