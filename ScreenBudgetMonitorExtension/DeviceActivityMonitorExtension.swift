@@ -158,7 +158,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
                 forKey: monitorStatusKey
             )
             NSLog("ScreenBudget estimate rearmed %@ recovery=%@", nextName,
-                  String(isRecovery))
+                  String(describing: isRecovery))
         } catch {
             defaults.removeObject(forKey: activeActivityKey)
             defaults.set("Rearm failed: \(error)", forKey: monitorStatusKey)
