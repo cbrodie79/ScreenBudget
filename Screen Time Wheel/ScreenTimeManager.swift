@@ -42,12 +42,14 @@ final class ScreenTimeManager {
 
         resetForNewDayIfNeeded(defaults: defaults)
 
-        let activity = DeviceActivityName(Self.dailyActivityName)
+        let savedName = defaults.string(forKey: Self.activeActivityKey)
+        let existingName = savedName?.hasPrefix(Self.dailyActivityName) == true ? savedName! : Self.dailyActivityName
+        let activity = DeviceActivityName(existingName)
 
         // Check the actual DeviceActivityCenter, not just a persisted flag:
         // a previous startMonitoring call may have failed or been stopped.
         if center.activities.contains(activity) {
-            defaults.set(Self.dailyActivityName, forKey: Self.activeActivityKey)
+            defaults.set(existingName, forKey: Self.activeActivityKey)
             defaults.set("Registered", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
             return
@@ -64,7 +66,7 @@ final class ScreenTimeManager {
 
         // This is a new diagnostic monitor. Clear the old inflated counter
         // once when migrating to this new threshold configuration so old values cannot survive the test.
-        if defaults.string(forKey: Self.activeActivityKey) != Self.dailyActivityName {
+        if savedName?.hasPrefix(Self.dailyActivityName) != true {
             defaults.set(0.0, forKey: Self.usageKey)
             defaults.set(Calendar.current.startOfDay(for: Date()),
                          forKey: Self.usageDateKey)
@@ -91,11 +93,14 @@ final class ScreenTimeManager {
         defaults.set(armedAt, forKey: Self.armedAtKey)
         defaults.set(0, forKey: "widgetMonitorRecoveryCount")
         defaults.removeObject(forKey: "widgetMonitorLastRecovery")
-        defaults.set(Self.dailyActivityName, forKey: Self.activeActivityKey)
+        let generation = defaults.integer(forKey: "widgetMonitorGeneration") + 1
+        defaults.set(generation, forKey: "widgetMonitorGeneration")
+        let replacementName = Self.dailyActivityName + "-g" + String(generation)
+        defaults.set(replacementName, forKey: Self.activeActivityKey)
 
         do {
-            try center.startMonitoring(activity, during: schedule, events: events)
-            NSLog("ScreenBudget estimate START activity=%@ at=%@", Self.dailyActivityName, armedAt.description)
+            try center.startMonitoring(DeviceActivityName(replacementName), during: schedule, events: events)
+            NSLog("ScreenBudget estimate START activity=%@ at=%@", replacementName, armedAt.description)
             defaults.set("Monitoring (estimate)", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
             print("ScreenBudget rolling five-minute estimate started")
