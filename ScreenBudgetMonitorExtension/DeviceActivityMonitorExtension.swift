@@ -32,7 +32,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
                      forKey: lastEntryKey)
 
         guard activity.rawValue.hasPrefix(dailyActivityName + "-g"),
-              defaults.string(forKey: activeActivityKey) == dailyActivityName else {
+              defaults.string(forKey: activeActivityKey) == activity.rawValue else {
             return
         }
 
@@ -57,8 +57,8 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         defaults.set("eventDidReachThreshold at \(Date())", forKey: lastEntryKey)
         NSLog("ScreenBudgetDiagnostic RECEIVED %@", receipt)
 
-        guard activity.rawValue == dailyActivityName,
-              defaults.string(forKey: activeActivityKey) == dailyActivityName,
+        guard activity.rawValue.hasPrefix(dailyActivityName + "-g"),
+              defaults.string(forKey: activeActivityKey) == activity.rawValue,
               event.rawValue.hasPrefix(thresholdPrefix),
               let thresholdMinutes = Int(
                 event.rawValue.dropFirst(thresholdPrefix.count)
