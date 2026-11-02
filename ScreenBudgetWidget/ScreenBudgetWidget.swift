@@ -149,12 +149,18 @@ struct ScreenBudgetWidgetView: View {
 
     let entry: ScreenBudgetEntry
 
+    // Cosmetic display offset only. Keep the shared Screen Time estimate
+    // unchanged; always show a tiny filled arc and a nonzero label.
+    private var displayedMinutes: Double {
+        max(0, entry.usageMinutes) + 1
+    }
+
     private var progress: Double {
         guard entry.goalMinutes > 0 else {
             return 0
         }
 
-        return entry.usageMinutes /
+        return displayedMinutes /
             entry.goalMinutes
     }
 
@@ -231,7 +237,7 @@ struct ScreenBudgetWidgetView: View {
 
                 Text(
                     formatDuration(
-                        entry.usageMinutes
+                        displayedMinutes
                     )
                 )
                 .font(
