@@ -289,7 +289,7 @@ struct ScreenBudgetWidget: Widget {
             "ScreenBudget"
         )
         .description(
-            "See today's Screen Time against your daily goal."
+            "Estimated Screen Time against your daily goal."
         )
         .supportedFamilies([
             .systemSmall
