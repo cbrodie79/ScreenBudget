@@ -12,6 +12,7 @@ import SwiftUI
 struct ScreenBudgetWidgetBundle: WidgetBundle {
     var body: some Widget {
         ScreenBudgetWidget()
+        ScreenBudgetReportTestWidget()
         ScreenBudgetWidgetControl()
     }
 }
