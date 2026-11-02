@@ -246,8 +246,8 @@ struct ScreenBudgetWidgetView: View {
 
                 Text(
                     progress > 1
-                        ? "Over goal"
-                        : "Today"
+                        ? "Est. over goal"
+                        : "Est. today"
                 )
                 .font(.caption2)
                 .foregroundStyle(
