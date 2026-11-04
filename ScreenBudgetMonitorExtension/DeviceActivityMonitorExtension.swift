@@ -3,40 +3,38 @@ import Foundation
 import WidgetKit
 
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
-
     private let appGroup = "group.com.example.ScreenGauge"
     private let usageKey = "widgetUsageMinutes"
     private let usageDateKey = "widgetUsageDate"
     private let activeActivityKey = "widgetMonitorActivity"
-
-    private let dailyActivityName = "screenBudget-approx-v1"
+    private let dailyActivityName = "screenBudget-cumulative-v2"
     private let thresholdPrefix = "dailyUsage-"
     private let armedAtKey = "widgetDiagnosticArmedAt"
     private let diagnosticLogKey = "widgetDiagnosticLog"
     private let lastEntryKey = "widgetDiagnosticLastEntry"
     private let lastCallbackKey = "widgetDiagnosticLastCallback"
-    private let generationKey = "widgetMonitorGeneration"
-    private let retryCountKey = "widgetMonitorRecoveryCount"
-    private let lastRetryKey = "widgetMonitorLastRecovery"
+    private let lastAcceptedKey = "widgetDiagnosticLastAccepted"
+    private let lastRejectedKey = "widgetDiagnosticLastRejected"
+    private let lastLegacyKey = "widgetDiagnosticLastLegacy"
+    private let acceptedCountKey = "widgetDiagnosticAcceptedCount"
+    private let rejectedCountKey = "widgetDiagnosticRejectedCount"
     private let monitorStatusKey = "widgetDiagnosticMonitorStatus"
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
+        guard let defaults = UserDefaults(suiteName: appGroup) else { return }
 
-        // This proves the extension ran, independent of any threshold.
-        guard let defaults = UserDefaults(suiteName: appGroup) else {
-            NSLog("ScreenBudgetDiagnostic intervalDidStart: App Group unavailable")
+        // Legacy monitor notifications must not overwrite active diagnostics.
+        guard activity.rawValue == dailyActivityName,
+              defaults.string(forKey: activeActivityKey) == dailyActivityName else {
+            defaults.set("intervalDidStart at \(Date()) activity=\(activity.rawValue)",
+                         forKey: lastLegacyKey)
             return
         }
-        defaults.set("intervalDidStart at \(Date()) for \(activity.rawValue)",
+
+        defaults.set("intervalDidStart at \(Date()) activity=\(activity.rawValue)",
                      forKey: lastEntryKey)
-
-        guard activity.rawValue.hasPrefix(dailyActivityName + "-g"),
-              defaults.string(forKey: activeActivityKey) == activity.rawValue else {
-            return
-        }
-
-        defaults.set("Monitoring (estimate)", forKey: monitorStatusKey)
+        defaults.set("Interval started (cumulative)", forKey: monitorStatusKey)
         resetForNewDayIfNeeded(defaults: defaults)
     }
 
@@ -45,138 +43,100 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         activity: DeviceActivityName
     ) {
         super.eventDidReachThreshold(event, activity: activity)
+        guard let defaults = UserDefaults(suiteName: appGroup) else { return }
 
-        // Record receipt before validating the activity and event names.
-        // This distinguishes an absent callback from one rejected by guards.
-        guard let defaults = UserDefaults(suiteName: appGroup) else {
-            NSLog("ScreenBudgetDiagnostic callback: App Group unavailable")
+        let now = Date()
+        let receipt = "at=\(now) activity=\(activity.rawValue) event=\(event.rawValue)"
+
+        // Keep evidence of stale/legacy callbacks without allowing them to
+        // masquerade as the newest active monitor callback.
+        guard activity.rawValue == dailyActivityName,
+              defaults.string(forKey: activeActivityKey) == dailyActivityName else {
+            defaults.set(receipt, forKey: lastLegacyKey)
+            NSLog("ScreenBudget ignored legacy callback %@", receipt)
             return
         }
-        let receipt = "at=\(Date()) activity=\(activity.rawValue) event=\(event.rawValue)"
-        defaults.set(receipt, forKey: lastCallbackKey)
-        defaults.set("eventDidReachThreshold at \(Date())", forKey: lastEntryKey)
-        NSLog("ScreenBudgetDiagnostic RECEIVED %@", receipt)
 
-        guard activity.rawValue.hasPrefix(dailyActivityName + "-g"),
-              defaults.string(forKey: activeActivityKey) == activity.rawValue,
-              event.rawValue.hasPrefix(thresholdPrefix),
-              let thresholdMinutes = Int(
-                event.rawValue.dropFirst(thresholdPrefix.count)
-              ),
-              thresholdMinutes == 5 else {
+        defaults.set(receipt, forKey: lastCallbackKey)
+        defaults.set("eventDidReachThreshold at \(now)", forKey: lastEntryKey)
+
+        guard event.rawValue.hasPrefix(thresholdPrefix),
+              let minutes = Int(event.rawValue.dropFirst(thresholdPrefix.count)),
+              (5...600).contains(minutes),
+              minutes % 5 == 0 else {
+            record(
+                "at=\(now) event=\(event.rawValue) result=REJECTED_UNKNOWN_EVENT",
+                accepted: false, defaults: defaults
+            )
             return
         }
 
         resetForNewDayIfNeeded(defaults: defaults)
 
-        let now = Date()
-        let elapsed = (defaults.object(forKey: armedAtKey) as? Date)
-            .map { now.timeIntervalSince($0) }
-        let elapsedString = elapsed.map { String(format: "%.1f", $0) } ?? "unknown"
-        let prior = defaults.double(forKey: usageKey)
-
-        // With includesPastActivity=false, 5 minutes of device usage
-        // cannot occur in fewer than 5 minutes of wall-clock time.
-        // Never invent minutes to fill a delay or a rejected callback.
         let dayStart = Calendar.current.startOfDay(for: now)
-        let anchor = (defaults.object(forKey: armedAtKey) as? Date)
-            .map { max($0, dayStart) }
-        let plausible = anchor.map {
-            now.timeIntervalSince($0) >= 5 * 60 - 15
-        } ?? false
+        let armedAt = defaults.object(forKey: armedAtKey) as? Date
+        // The schedule repeats at midnight. Since includesPastActivity is
+        // false, activity before registration on the first day is excluded.
+        let countingStart = armedAt.map { max($0, dayStart) }
+        let elapsed = countingStart.map { now.timeIntervalSince($0) } ?? -1
+        let plausible = elapsed + 15 >= Double(minutes) * 60
 
-        // Diagnostic only: record even rejected, duplicate, or out-of-order
-        // callbacks. Keep a bounded history so we can inspect false positives.
-        // Keep the most recent 40 entries so the log remains bounded.
-        let verdict = plausible ? "ACCEPTED" : "REJECTED_PREMATURE"
-        let message = "at=\(now) event=\(event.rawValue) threshold=\(thresholdMinutes)m elapsedSinceStart=\(elapsedString)s prior=\(Int(prior))m result=\(verdict)"
-        NSLog("ScreenBudgetDiagnostic CALLBACK %@", message)
-        var log = defaults.stringArray(forKey: diagnosticLogKey) ?? []
-        log.append(message)
-        defaults.set(Array(log.suffix(40)), forKey: diagnosticLogKey)
-
-        if plausible {
-            // At most five verified minutes per monitoring generation.
-            // This is a conservative usage estimate, not exact Screen Time.
-            defaults.set(prior + 5, forKey: usageKey)
-            defaults.set(dayStart, forKey: usageDateKey)
-            defaults.set(0, forKey: retryCountKey)
-            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
-            rearm(activity: activity, defaults: defaults, now: now, isRecovery: false)
+        let prior = defaults.double(forKey: usageKey)
+        let verdict: String
+        if !plausible {
+            verdict = "REJECTED_PREMATURE"
+        } else if Double(minutes) <= prior {
+            verdict = "IGNORED_DUPLICATE_OR_OUT_OF_ORDER"
         } else {
-            // One immediate retry is allowed; don't endlessly restart
-            // the monitor if iOS keeps delivering false callbacks.
-            let retries = defaults.integer(forKey: retryCountKey)
-            let lastRetry = defaults.object(forKey: lastRetryKey) as? Date
-            if retries < 1 && (lastRetry == nil ||
-                 now.timeIntervalSince(lastRetry!) > 600) {
-                defaults.set(retries + 1, forKey: retryCountKey)
-                defaults.set(now, forKey: lastRetryKey)
-                rearm(activity: activity, defaults: defaults, now: now, isRecovery: true)
-            } else {
-                defaults.set("Premature callback; awaiting repair", forKey: monitorStatusKey)
-                // A subsequent foreground app launch can re-arm it.
-                DeviceActivityCenter().stopMonitoring([activity])
-            }
+            verdict = "ACCEPTED"
         }
+
+        let message = "at=\(now) event=\(event.rawValue) threshold=\(minutes)m elapsed=\(String(format: "%.1f", elapsed))s prior=\(Int(prior))m result=\(verdict)"
+
+        if verdict == "ACCEPTED" {
+            // Cumulative checkpoints: a 20-minute callback means at least
+            // 20 minutes according to iOS, NOT another 20 minutes to add.
+            defaults.set(Double(minutes), forKey: usageKey)
+            defaults.set(dayStart, forKey: usageDateKey)
+            record(message, accepted: true, defaults: defaults)
+            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
+        } else if verdict == "REJECTED_PREMATURE" {
+            record(message, accepted: false, defaults: defaults)
+        } else {
+            appendLog(message, defaults: defaults)
+        }
+
+        NSLog("ScreenBudget cumulative %@", message)
+        // No stopMonitoring/startMonitoring here: do not discard accumulated
+        // usage or create generations on every five-minute checkpoint.
     }
 
-    private func rearm(
-        activity: DeviceActivityName,
-        defaults: UserDefaults,
-        now: Date,
-        isRecovery: Bool
-    ) {
-        let center = DeviceActivityCenter()
-        let generation = defaults.integer(forKey: generationKey) + 1
-        let nextName = dailyActivityName + "-g" + String(generation)
-        let next = DeviceActivityName(nextName)
-        let schedule = DeviceActivitySchedule(
-            intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
-            repeats: true
-        )
-        let event = DeviceActivityEvent(
-            threshold: DateComponents(minute: 5),
-            includesPastActivity: false
-        )
+    private func record(_ message: String, accepted: Bool, defaults: UserDefaults) {
+        let latestKey = accepted ? lastAcceptedKey : lastRejectedKey
+        let countKey = accepted ? acceptedCountKey : rejectedCountKey
+        defaults.set(message, forKey: latestKey)
+        defaults.set(defaults.integer(forKey: countKey) + 1, forKey: countKey)
+        appendLog(message, defaults: defaults)
+    }
 
-        // Persist the new identity before registering so immediate/stale
-        // callbacks from the previous activity can't double count.
-        defaults.set(generation, forKey: generationKey)
-        defaults.set(nextName, forKey: activeActivityKey)
-        defaults.set(now, forKey: armedAtKey)
-        center.stopMonitoring([activity])
-        do {
-            try center.startMonitoring(
-                next,
-                during: schedule,
-                events: [DeviceActivityEvent.Name("dailyUsage-5"): event]
-            )
-            defaults.set(
-                isRecovery ? "Retrying after early callback" : "Monitoring (estimate)",
-                forKey: monitorStatusKey
-            )
-            NSLog("ScreenBudget estimate rearmed %@ recovery=%@", nextName,
-                  String(describing: isRecovery))
-        } catch {
-            defaults.removeObject(forKey: activeActivityKey)
-            defaults.set("Rearm failed: \(error)", forKey: monitorStatusKey)
-            NSLog("ScreenBudget estimate rearm failed: %@", String(describing: error))
-        }
+    private func appendLog(_ message: String, defaults: UserDefaults) {
+        var entries = defaults.stringArray(forKey: diagnosticLogKey) ?? []
+        entries.append(message)
+        defaults.set(Array(entries.suffix(40)), forKey: diagnosticLogKey)
     }
 
     private func resetForNewDayIfNeeded(defaults: UserDefaults) {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        if let savedDate = defaults.object(forKey: usageDateKey) as? Date,
-           calendar.isDate(savedDate, inSameDayAs: today) {
+        let today = Calendar.current.startOfDay(for: Date())
+        if let saved = defaults.object(forKey: usageDateKey) as? Date,
+           Calendar.current.isDate(saved, inSameDayAs: today) {
             return
         }
-
         defaults.set(0.0, forKey: usageKey)
         defaults.set(today, forKey: usageDateKey)
+        defaults.set(0, forKey: acceptedCountKey)
+        defaults.set(0, forKey: rejectedCountKey)
+        defaults.removeObject(forKey: lastAcceptedKey)
+        defaults.removeObject(forKey: lastRejectedKey)
         WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
     }
 }
