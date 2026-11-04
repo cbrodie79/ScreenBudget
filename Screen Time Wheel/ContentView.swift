@@ -89,8 +89,14 @@ struct ContentView: View {
 
                 Section("Monitor diagnostics") {
                     LabeledContent("Monitor", value: diagnostics.monitorStatus)
+                    LabeledContent("Active activity", value: diagnostics.activeActivity)
                     LabeledContent("Extension entry", value: diagnostics.lastEntry)
-                    LabeledContent("Last callback", value: diagnostics.lastCallback)
+                    LabeledContent("Last active callback", value: diagnostics.lastCallback)
+                    LabeledContent("Accepted events", value: "\(diagnostics.acceptedCount)")
+                    LabeledContent("Rejected events", value: "\(diagnostics.rejectedCount)")
+                    LabeledContent("Last accepted", value: diagnostics.lastAccepted)
+                    LabeledContent("Last rejected", value: diagnostics.lastRejected)
+                    LabeledContent("Last legacy callback", value: diagnostics.lastLegacy)
                     LabeledContent("Estimated widget usage", value: "\(Int(diagnostics.widgetMinutes)) min")
 
                     if let message = diagnostics.latestEvent {
@@ -103,7 +109,7 @@ struct ContentView: View {
                         refreshDiagnostics()
                     }
 
-                    Text("The widget estimates screen time in five-minute checkpoints. Premature callbacks are rejected and retried once. iOS may delay or miss callbacks; this can undercount actual usage. The accurate total remains in the report above.")
+                    Text("One persistent daily monitor uses cumulative five-minute thresholds. The estimate only advances for a new, plausibly timed threshold. Premature and legacy callbacks are ignored, not restarted. Missed callbacks may still cause undercounting; the accurate total remains in the report above.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -147,8 +153,14 @@ struct ContentView: View {
 
 private struct MonitorDiagnostics {
     let monitorStatus: String
+    let activeActivity: String
     let lastEntry: String
     let lastCallback: String
+    let lastAccepted: String
+    let lastRejected: String
+    let lastLegacy: String
+    let acceptedCount: Int
+    let rejectedCount: Int
     let widgetMinutes: Double
     let latestEvent: String?
 
@@ -156,8 +168,14 @@ private struct MonitorDiagnostics {
         guard let defaults = UserDefaults(suiteName: AppGroup.identifier) else {
             return MonitorDiagnostics(
                 monitorStatus: "App Group unavailable",
+                activeActivity: "Unavailable",
                 lastEntry: "Unavailable",
                 lastCallback: "Unavailable",
+                lastAccepted: "Unavailable",
+                lastRejected: "Unavailable",
+                lastLegacy: "Unavailable",
+                acceptedCount: 0,
+                rejectedCount: 0,
                 widgetMinutes: 0,
                 latestEvent: nil
             )
@@ -167,8 +185,14 @@ private struct MonitorDiagnostics {
         let today = date.map { Calendar.current.isDateInToday($0) } ?? false
         return MonitorDiagnostics(
             monitorStatus: monitorStatus,
+            activeActivity: defaults.string(forKey: "widgetMonitorActivity") ?? "None",
             lastEntry: defaults.string(forKey: "widgetDiagnosticLastEntry") ?? "None observed",
             lastCallback: defaults.string(forKey: "widgetDiagnosticLastCallback") ?? "None observed",
+            lastAccepted: defaults.string(forKey: "widgetDiagnosticLastAccepted") ?? "None observed",
+            lastRejected: defaults.string(forKey: "widgetDiagnosticLastRejected") ?? "None observed",
+            lastLegacy: defaults.string(forKey: "widgetDiagnosticLastLegacy") ?? "None observed",
+            acceptedCount: today ? defaults.integer(forKey: "widgetDiagnosticAcceptedCount") : 0,
+            rejectedCount: today ? defaults.integer(forKey: "widgetDiagnosticRejectedCount") : 0,
             widgetMinutes: today ? defaults.double(forKey: "widgetUsageMinutes") : 0,
             latestEvent: defaults.stringArray(forKey: "widgetDiagnosticLog")?.last
         )
