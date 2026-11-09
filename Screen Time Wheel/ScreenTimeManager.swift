@@ -39,20 +39,24 @@ final class ScreenTimeManager {
         resetForNewDayIfNeeded(defaults: defaults)
 
         let activity = DeviceActivityName(Self.dailyActivityName)
+        // Only retire our old ScreenBudget monitors. Do not interfere
+        // with other activity-monitoring features.
+        let previousActivities = center.activities.filter {
+            ($0.rawValue.hasPrefix("screenBudget-") || $0.rawValue == "dailyWidgetTracking") && $0 != activity
+        }
+        if !previousActivities.isEmpty {
+            center.stopMonitoring(previousActivities)
+            defaults.set(previousActivities.map { $0.rawValue }.sorted().joined(separator: ", "), forKey: "widgetDiagnosticRetiredMonitors")
+        }
+
+
+        defaults.set(center.activities.map { $0.rawValue }.sorted().joined(separator: ", "), forKey: "widgetDiagnosticRegisteredMonitors")
+        defaults.set("All apps/categories/websites; monitor has no device filter. Daily 00:00–23:59; five-minute thresholds through 600m; includesPastActivity=false. Zone: \(TimeZone.current.identifier); OS: \(ProcessInfo.processInfo.operatingSystemVersionString)", forKey: "widgetDiagnosticConfiguration")
         if center.activities.contains(activity) {
             defaults.set(Self.dailyActivityName, forKey: Self.activeActivityKey)
             defaults.set("Registered (cumulative)", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
             return
-        }
-
-        // Only retire our old ScreenBudget monitors. Do not interfere
-        // with other activity-monitoring features.
-        let previousActivities = center.activities.filter {
-            $0.rawValue.hasPrefix("screenBudget-") && $0 != activity
-        }
-        if !previousActivities.isEmpty {
-            center.stopMonitoring(previousActivities)
         }
 
         let migrating = defaults.string(forKey: Self.activeActivityKey) != Self.dailyActivityName
@@ -103,6 +107,7 @@ final class ScreenTimeManager {
 
         do {
             try center.startMonitoring(activity, during: schedule, events: events)
+            defaults.set(center.activities.map { $0.rawValue }.sorted().joined(separator: ", "), forKey: "widgetDiagnosticRegisteredMonitors")
             defaults.set("Registered (cumulative)", forKey: Self.monitorStatusKey)
             defaults.set(Date(), forKey: Self.lastCheckKey)
             NSLog("ScreenBudget cumulative monitor registered at %@; %d events",
