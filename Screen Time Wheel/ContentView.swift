@@ -109,6 +109,14 @@ struct ContentView: View {
                     LabeledContent("Last legacy callback", value: diagnostics.lastLegacy)
                     LabeledContent("Estimated widget usage", value: "\(Int(diagnostics.widgetMinutes)) min")
 
+                    Text(widgetRefreshDetails)
+                        .font(.caption)
+                        .textSelection(.enabled)
+                    Button("Request widget refresh") {
+                        store.requestWidgetRefresh(reason: "manual diagnostic refresh")
+                        refreshDiagnostics()
+                    }
+
                     if let message = diagnostics.latestEvent {
                         Text(message)
                             .font(.caption)
@@ -149,15 +157,44 @@ struct ContentView: View {
 
                 ScreenTimeManager.shared
                     .startMonitoringIfNeeded()
+                store.requestWidgetRefresh(reason: "app appeared")
                 refreshDiagnostics()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
+                    store.refreshDay()
                     ScreenTimeManager.shared.startMonitoringIfNeeded()
+                    store.requestWidgetRefresh(reason: "app became active")
                     refreshDiagnostics()
                 }
             }
         }
+    }
+
+    private var widgetRefreshDetails: String {
+        let defaults = UserDefaults(suiteName: AppGroup.identifier)
+        func timestamp(_ value: Any?) -> String {
+            (value as? Date)?.formatted(date: .abbreviated, time: .standard) ?? "Unknown"
+        }
+        var lines: [String] = []
+        if let request = defaults?.dictionary(forKey: "widgetDiagnosticReloadRequest") {
+            let reason = request["reason"] as? String ?? "Unknown"
+            let minutes = (request["minutes"] as? NSNumber)?.intValue ?? 0
+            lines.append("Last refresh request: \(timestamp(request["at"])) — \(reason); stored estimate \(minutes)m")
+        } else {
+            lines.append("No widget refresh request recorded yet")
+        }
+        if let read = defaults?.dictionary(forKey: "widgetDiagnosticTimelineRead") {
+            let raw = (read["rawMinutes"] as? NSNumber)?.intValue ?? 0
+            let entry = (read["entryMinutes"] as? NSNumber)?.intValue ?? 0
+            let display = (read["displayMinutes"] as? NSNumber)?.intValue ?? 0
+            lines.append("Last widget timeline read: \(timestamp(read["at"])) — raw \(raw)m; entry \(entry)m; label \(display)m (includes +1m)")
+            lines.append("Usage date read: \(timestamp(read["usageDate"]))")
+        } else {
+            lines.append("No widget timeline read recorded yet")
+        }
+        lines.append("A timeline read confirms an entry was prepared, not displayed. iOS controls when refresh requests run. Return here and tap Refresh diagnostics after checking the Home Screen.")
+        return lines.joined(separator: "\n")
     }
 
     private var diagnosticDetails: String {

@@ -56,11 +56,11 @@ struct ScreenBudgetProvider: TimelineProvider {
     ) {
 
         let entry =
-            loadEntry()
+            loadEntry(recordTimelineRead: !context.isPreview)
 
         /*
          The monitor extension will call:
-         WidgetCenter.shared.reloadAllTimelines()
+         WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
 
          whenever a 5-minute usage threshold is crossed.
 
@@ -102,7 +102,7 @@ struct ScreenBudgetProvider: TimelineProvider {
         completion(timeline)
     }
 
-    private func loadEntry()
+    private func loadEntry(recordTimelineRead: Bool = false)
         -> ScreenBudgetEntry {
 
         let defaults =
@@ -116,10 +116,11 @@ struct ScreenBudgetProvider: TimelineProvider {
             forKey: usageDateKey
         ) as? Date
 
+        let rawMinutes = defaults?.double(forKey: usageKey) ?? 0
         let usageMinutes: Double
         if let savedUsageDate,
            Calendar.current.isDateInToday(savedUsageDate) {
-            usageMinutes = defaults?.double(forKey: usageKey) ?? 0
+            usageMinutes = rawMinutes
         } else {
             usageMinutes = 0
         }
@@ -134,8 +135,22 @@ struct ScreenBudgetProvider: TimelineProvider {
                 ? savedGoal
                 : 120
 
+        let now = Date()
+        if recordTimelineRead {
+            // Record provider reads only, not gallery snapshots or view renders.
+            // This proves an entry was prepared, not that it appeared on screen.
+            var read: [String: Any] = [
+                "at": now,
+                "rawMinutes": rawMinutes,
+                "entryMinutes": usageMinutes,
+                "displayMinutes": max(0, usageMinutes) + 1
+            ]
+            if let savedUsageDate { read["usageDate"] = savedUsageDate }
+            defaults?.set(read, forKey: "widgetDiagnosticTimelineRead")
+        }
+
         return ScreenBudgetEntry(
-            date: Date(),
+            date: now,
             usageMinutes: usageMinutes,
             goalMinutes: goalMinutes
         )

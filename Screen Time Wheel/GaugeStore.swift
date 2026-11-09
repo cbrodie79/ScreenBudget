@@ -56,6 +56,17 @@ final class GaugeStore: ObservableObject {
 
     func refreshWidget() {
         save()
+        requestWidgetRefresh(reason: "app refresh")
+    }
+
+    func requestWidgetRefresh(reason: String) {
+        let usageDate = defaults.object(forKey: "widgetUsageDate") as? Date
+        let isToday = usageDate.map { Calendar.current.isDateInToday($0) } ?? false
+        defaults.set([
+            "at": Date(),
+            "reason": reason,
+            "minutes": isToday ? defaults.double(forKey: "widgetUsageMinutes") : 0
+        ], forKey: "widgetDiagnosticReloadRequest")
         WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
     }
 

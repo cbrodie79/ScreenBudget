@@ -103,7 +103,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             defaults.set(Double(minutes), forKey: usageKey)
             defaults.set(dayStart, forKey: usageDateKey)
             record(message, accepted: true, defaults: defaults)
-            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
+            requestWidgetRefresh(defaults: defaults, reason: "accepted threshold \(minutes)m")
         } else if verdict == "REJECTED_PREMATURE" {
             record(message, accepted: false, defaults: defaults)
         } else {
@@ -113,6 +113,16 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         NSLog("ScreenBudget cumulative %@", message)
         // No stopMonitoring/startMonitoring here: do not discard accumulated
         // usage or create generations on every five-minute checkpoint.
+    }
+
+    private func requestWidgetRefresh(defaults: UserDefaults, reason: String) {
+        // A request is not proof that WidgetKit has rebuilt or shown the entry.
+        defaults.set([
+            "at": Date(),
+            "reason": reason,
+            "minutes": defaults.double(forKey: usageKey)
+        ], forKey: "widgetDiagnosticReloadRequest")
+        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
     }
 
     private func record(_ message: String, accepted: Bool, defaults: UserDefaults) {
@@ -141,6 +151,6 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         defaults.set(0, forKey: rejectedCountKey)
         defaults.removeObject(forKey: lastAcceptedKey)
         defaults.removeObject(forKey: lastRejectedKey)
-        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
+        requestWidgetRefresh(defaults: defaults, reason: "monitor daily reset")
     }
 }
