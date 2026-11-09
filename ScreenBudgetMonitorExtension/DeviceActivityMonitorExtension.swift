@@ -46,6 +46,8 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
         guard let defaults = UserDefaults(suiteName: appGroup) else { return }
 
         let now = Date()
+        let previousCallback = defaults.object(forKey: "widgetDiagnosticCallbackAt") as? Date
+        let callbackGap = previousCallback.map { now.timeIntervalSince($0) }
         let receipt = "at=\(now) activity=\(activity.rawValue) event=\(event.rawValue)"
 
         // Keep evidence of stale/legacy callbacks without allowing them to
@@ -57,6 +59,7 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             return
         }
 
+        defaults.set(now, forKey: "widgetDiagnosticCallbackAt")
         defaults.set(receipt, forKey: lastCallbackKey)
         defaults.set("eventDidReachThreshold at \(now)", forKey: lastEntryKey)
 
@@ -91,7 +94,8 @@ final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
             verdict = "ACCEPTED"
         }
 
-        let message = "at=\(now) event=\(event.rawValue) threshold=\(minutes)m elapsed=\(String(format: "%.1f", elapsed))s prior=\(Int(prior))m result=\(verdict)"
+        let gapDescription = callbackGap.map { String(format: "%.1f", $0) } ?? "first"
+        let message = "gap=\(gapDescription)s delta=\(minutes - Int(prior))m at=\(now) event=\(event.rawValue) threshold=\(minutes)m elapsed=\(String(format: "%.1f", elapsed))s prior=\(Int(prior))m result=\(verdict)"
 
         if verdict == "ACCEPTED" {
             // Cumulative checkpoints: a 20-minute callback means at least
