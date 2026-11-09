@@ -20,9 +20,7 @@ struct ContentView: View {
                     start: startOfDay,
                     end: Date()
                 )
-            ),
-            users: .all,
-            devices: .all
+            )
         )
     }
 
@@ -99,7 +97,7 @@ struct ContentView: View {
                         refreshDiagnostics()
                     }
                     Text(testProgress).font(.caption)
-                    Text("Report: all available users/devices; all apps/categories/websites; local midnight to now. Compare the same device scope in Settings → Screen Time. Note the report total, mark a baseline, use one app for 10 minutes, then return and refresh. Compare increases, since monitoring may begin partway through a day.")
+                    Text("Report: current user and this device only; all apps/categories/websites; local midnight to now. Compare this iPhone in Settings → Screen Time. Note the report total, mark a baseline, use one app for 10 minutes, then return and refresh. Compare increases, since monitoring may begin partway through a day.")
                         .font(.footnote)
                     LabeledContent("Active activity", value: diagnostics.activeActivity)
                     LabeledContent("Extension entry", value: diagnostics.lastEntry)
