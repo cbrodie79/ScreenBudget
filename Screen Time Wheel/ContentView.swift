@@ -20,7 +20,9 @@ struct ContentView: View {
                     start: startOfDay,
                     end: Date()
                 )
-            )
+            ),
+            users: .all,
+            devices: .all
         )
     }
 
@@ -89,6 +91,16 @@ struct ContentView: View {
 
                 Section("Monitor diagnostics") {
                     LabeledContent("Monitor", value: diagnostics.monitorStatus)
+                    Text(diagnosticDetails).font(.caption).textSelection(.enabled)
+                    Button("Mark test baseline") {
+                        let defaults = UserDefaults(suiteName: AppGroup.identifier)
+                        defaults?.set(Date(), forKey: "widgetDiagnosticTestStarted")
+                        defaults?.set(MonitorDiagnostics.read().widgetMinutes, forKey: "widgetDiagnosticTestBaseline")
+                        refreshDiagnostics()
+                    }
+                    Text(testProgress).font(.caption)
+                    Text("Report: all available users/devices; all apps/categories/websites; local midnight to now. Compare the same device scope in Settings → Screen Time. Note the report total, mark a baseline, use one app for 10 minutes, then return and refresh. Compare increases, since monitoring may begin partway through a day.")
+                        .font(.footnote)
                     LabeledContent("Active activity", value: diagnostics.activeActivity)
                     LabeledContent("Extension entry", value: diagnostics.lastEntry)
                     LabeledContent("Last active callback", value: diagnostics.lastCallback)
@@ -105,11 +117,15 @@ struct ContentView: View {
                             .textSelection(.enabled)
                     }
 
+                    ForEach(Array(diagnostics.eventLog.enumerated()), id: \.offset) { _, entry in
+                        Text(entry).font(.caption).textSelection(.enabled)
+                    }
+
                     Button("Refresh diagnostics") {
                         refreshDiagnostics()
                     }
 
-                    Text("One persistent daily monitor uses cumulative five-minute thresholds. The estimate only advances for a new, plausibly timed threshold. Premature and legacy callbacks are ignored, not restarted. Missed callbacks may still cause undercounting; the accurate total remains in the report above.")
+                    Text("Threshold notifications may overcount or undercount. The clock-time check rejects impossible totals but cannot verify actual screen use. Legacy callbacks are ignored.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -146,6 +162,26 @@ struct ContentView: View {
         }
     }
 
+    private var diagnosticDetails: String {
+        let defaults = UserDefaults(suiteName: AppGroup.identifier)
+        let registered = defaults?.string(forKey: "widgetDiagnosticRegisteredMonitors") ?? "Unknown"
+        let retired = defaults?.string(forKey: "widgetDiagnosticRetiredMonitors") ?? "None"
+        let config = defaults?.string(forKey: "widgetDiagnosticConfiguration") ?? "Unknown"
+        let armed = (defaults?.object(forKey: "widgetDiagnosticArmedAt") as? Date)?.formatted(date: .abbreviated, time: .standard) ?? "Unknown"
+        return "Registered: \(registered)\nRetired: \(retired)\nArmed: \(armed)\n\(config)"
+    }
+
+    private var testProgress: String {
+        guard let defaults = UserDefaults(suiteName: AppGroup.identifier),
+              let start = defaults.object(forKey: "widgetDiagnosticTestStarted") as? Date else {
+            return "No test baseline marked"
+        }
+        guard Calendar.current.isDateInToday(start) else { return "Baseline expired; mark a new one" }
+        let delta = diagnostics.widgetMinutes - defaults.double(forKey: "widgetDiagnosticTestBaseline")
+        guard delta >= 0 else { return "Monitor reset; mark a new baseline" }
+        return "\(Int(Date().timeIntervalSince(start) / 60)) min elapsed; widget increase: \(Int(delta)) min"
+    }
+
     private func refreshDiagnostics() {
         diagnostics = MonitorDiagnostics.read()
     }
@@ -163,6 +199,7 @@ private struct MonitorDiagnostics {
     let rejectedCount: Int
     let widgetMinutes: Double
     let latestEvent: String?
+    let eventLog: [String]
 
     static func read() -> MonitorDiagnostics {
         guard let defaults = UserDefaults(suiteName: AppGroup.identifier) else {
@@ -177,7 +214,8 @@ private struct MonitorDiagnostics {
                 acceptedCount: 0,
                 rejectedCount: 0,
                 widgetMinutes: 0,
-                latestEvent: nil
+                latestEvent: nil,
+                eventLog: []
             )
         }
         let date = defaults.object(forKey: "widgetUsageDate") as? Date
@@ -194,7 +232,8 @@ private struct MonitorDiagnostics {
             acceptedCount: today ? defaults.integer(forKey: "widgetDiagnosticAcceptedCount") : 0,
             rejectedCount: today ? defaults.integer(forKey: "widgetDiagnosticRejectedCount") : 0,
             widgetMinutes: today ? defaults.double(forKey: "widgetUsageMinutes") : 0,
-            latestEvent: defaults.stringArray(forKey: "widgetDiagnosticLog")?.last
+            latestEvent: defaults.stringArray(forKey: "widgetDiagnosticLog")?.last,
+            eventLog: Array((defaults.stringArray(forKey: "widgetDiagnosticLog") ?? []).suffix(12))
         )
     }
 }
