@@ -26,6 +26,17 @@ final class DeviceActivityMonitorExtension:
     private let minutesPerTick =
         5.0
 
+    private let lastUpdateKey = "widgetUsageLastUpdatedAt"
+    private let diagnosticKey = "widgetMonitorDiagnostics"
+
+    private func log(_ message: String, defaults: UserDefaults) {
+        let line = "\(Date()): monitor: \(message)"
+        var history = defaults.stringArray(forKey: diagnosticKey) ?? []
+        history.append(line)
+        defaults.set(Array(history.suffix(60)), forKey: diagnosticKey)
+        print(line)
+    }
+
     /*
      A legitimate 5-minute usage event physically
      cannot happen only a few seconds after we
@@ -58,9 +69,11 @@ final class DeviceActivityMonitorExtension:
             return
         }
 
-        resetForNewDayIfNeeded(
-            defaults: defaults
-        )
+        let didReset = resetForNewDayIfNeeded(defaults: defaults)
+        log("Interval started \(activity.rawValue), reset=\(didReset)", defaults: defaults)
+        if didReset {
+            rearmFreshEvent(replacing: activity, defaults: defaults)
+        }
     }
 
     // MARK: Five-minute threshold
@@ -83,9 +96,11 @@ final class DeviceActivityMonitorExtension:
             return
         }
 
-        resetForNewDayIfNeeded(
-            defaults: defaults
-        )
+        if resetForNewDayIfNeeded(defaults: defaults) {
+            log("Threshold after day reset; rearming without count", defaults: defaults)
+            rearmFreshEvent(replacing: activity, defaults: defaults)
+            return
+        }
 
         // ------------------------------
         // 1. Reject stale callbacks
@@ -96,6 +111,7 @@ final class DeviceActivityMonitorExtension:
                 forKey: activeActivityKey
             )
         else {
+            log("Ignored callback without expected activity: \(activity.rawValue)", defaults: defaults)
             return
         }
 
@@ -103,9 +119,7 @@ final class DeviceActivityMonitorExtension:
                 expectedActivity
         else {
 
-            print(
-                "Ignoring stale ScreenBudget callback"
-            )
+            log("Ignored stale callback \(activity.rawValue), expected \(expectedActivity)", defaults: defaults)
 
             return
         }
@@ -119,7 +133,7 @@ final class DeviceActivityMonitorExtension:
                 forKey: armedAtKey
             ) as? Date
         else {
-
+            log("Arming timestamp missing; rearming", defaults: defaults)
             rearmFreshEvent(
                 replacing: activity,
                 defaults: defaults
@@ -139,13 +153,8 @@ final class DeviceActivityMonitorExtension:
 
         if elapsed < minimumAcceptedWallTime {
 
-            print(
-                """
-                Premature DeviceActivity callback.
-                Armed only \(elapsed) seconds ago.
-                Ignoring callback.
-                """
-            )
+            log("Premature callback ignored at \(Int(elapsed))s for \(activity.rawValue)", defaults: defaults)
+            // Keep monitor armed: a legitimate threshold may still arrive.
 
             return
         }
@@ -167,14 +176,10 @@ final class DeviceActivityMonitorExtension:
             forKey: usageKey
         )
 
-        defaults.set(
-            Date(),
-            forKey: usageDateKey
-        )
-
-        print(
-            "Accepted usage tick: \(newTotal) minutes"
-        )
+        let now = Date()
+        defaults.set(now, forKey: usageDateKey)
+        defaults.set(now, forKey: lastUpdateKey)
+        log("Accepted tick \(current) -> \(newTotal)m at \(Int(elapsed))s", defaults: defaults)
 
         WidgetCenter.shared
             .reloadAllTimelines()
@@ -270,9 +275,7 @@ final class DeviceActivityMonitorExtension:
                 ]
             )
 
-            print(
-                "Re-armed generation \(generation)"
-            )
+            log("Re-armed generation \(generation)", defaults: defaults)
 
         } catch {
 
@@ -280,17 +283,16 @@ final class DeviceActivityMonitorExtension:
                 forKey: activeActivityKey
             )
 
-            print(
-                "Unable to re-arm ScreenBudget: \(error)"
-            )
+            log("Failed re-arm generation \(generation): \(error)", defaults: defaults)
         }
     }
 
     // MARK: Daily reset
 
+    @discardableResult
     private func resetForNewDayIfNeeded(
         defaults: UserDefaults
-    ) {
+    ) -> Bool {
 
         let calendar =
             Calendar.current
@@ -309,10 +311,12 @@ final class DeviceActivityMonitorExtension:
                 savedDate,
                 inSameDayAs: today
             ) {
-                return
+                return false
             }
         }
 
+        log("New day reset", defaults: defaults)
+        defaults.removeObject(forKey: lastUpdateKey)
         defaults.set(
             0.0,
             forKey: usageKey
@@ -325,5 +329,6 @@ final class DeviceActivityMonitorExtension:
 
         WidgetCenter.shared
             .reloadAllTimelines()
+        return true
     }
 }
