@@ -45,13 +45,13 @@ final class GaugeStore: ObservableObject {
         if defaults.string(forKey: dateKey) != today {
             defaults.set(today, forKey: dateKey)
             usedMinutes = 0
-            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenGaugeWidget")
+            WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
         }
     }
 
     func refreshWidget() {
         save()
-        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenGaugeWidget")
+        WidgetCenter.shared.reloadTimelines(ofKind: "ScreenBudgetWidget")
     }
 
     private func save() {
