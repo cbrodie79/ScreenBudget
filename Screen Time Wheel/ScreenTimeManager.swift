@@ -26,6 +26,16 @@ final class ScreenTimeManager {
         "widgetMonitorActivity"
 
     static let minutesPerTick = 5.0
+    static let lastUpdateKey = "widgetUsageLastUpdatedAt"
+    static let diagnosticKey = "widgetMonitorDiagnostics"
+
+    private func log(_ message: String, defaults: UserDefaults) {
+        let line = "\(Date()): app: \(message)"
+        var history = defaults.stringArray(forKey: Self.diagnosticKey) ?? []
+        history.append(line)
+        defaults.set(Array(history.suffix(60)), forKey: Self.diagnosticKey)
+        print(line)
+    }
 
     private let center =
         DeviceActivityCenter()
@@ -73,20 +83,17 @@ final class ScreenTimeManager {
          current 5-minute bucket.
         */
 
-        if defaults.string(
-            forKey: Self.activeActivityKey
-        ) != nil {
-
-            print(
-                "ScreenBudget monitor already armed"
-            )
-
+        let activeNames = center.activities
+        let expected = defaults.string(forKey: Self.activeActivityKey)
+        if let expected, activeNames.contains(where: { $0.rawValue == expected }) {
+            log("Monitor confirmed active: \(expected)", defaults: defaults)
             return
         }
-
-        armFreshFiveMinuteEvent(
-            defaults: defaults
-        )
+        log("Recovering missing monitor (saved=\(expected ?? "none"), registered=\(activeNames.count))", defaults: defaults)
+        let stale = activeNames.filter { $0.rawValue.hasPrefix("screenBudget-") }
+        if !stale.isEmpty { center.stopMonitoring(stale) }
+        defaults.removeObject(forKey: Self.activeActivityKey)
+        armFreshFiveMinuteEvent(defaults: defaults)
     }
 
     // MARK: Fresh monitor
@@ -166,9 +173,7 @@ final class ScreenTimeManager {
                 ]
             )
 
-            print(
-                "Armed ScreenBudget generation \(generation)"
-            )
+            log("Armed generation \(generation)", defaults: defaults)
 
         } catch {
 
@@ -176,9 +181,7 @@ final class ScreenTimeManager {
                 forKey: Self.activeActivityKey
             )
 
-            print(
-                "Unable to start ScreenBudget monitor: \(error)"
-            )
+            log("Unable to start monitor: \(error)", defaults: defaults)
         }
     }
 
@@ -209,10 +212,14 @@ final class ScreenTimeManager {
             }
         }
 
+        let stale = center.activities.filter { $0.rawValue.hasPrefix("screenBudget-") }
+        if !stale.isEmpty { center.stopMonitoring(stale) }
+        log("New-day reset; stopped \(stale.count) old monitors", defaults: defaults)
         defaults.set(
             0.0,
             forKey: Self.usageKey
         )
+        defaults.removeObject(forKey: Self.lastUpdateKey)
 
         defaults.set(
             today,
