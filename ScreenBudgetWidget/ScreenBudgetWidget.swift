@@ -7,6 +7,7 @@ struct ScreenBudgetEntry: TimelineEntry {
     let date: Date
     let usageMinutes: Double
     let goalMinutes: Double
+    let lastUpdatedAt: Date?
 }
 
 // MARK: - Timeline Provider
@@ -22,6 +23,9 @@ struct ScreenBudgetProvider: TimelineProvider {
     private let goalKey =
         "goalMinutes"
 
+    private let usageDateKey = "widgetUsageDate"
+    private let lastUpdateKey = "widgetUsageLastUpdatedAt"
+
     func placeholder(
         in context: Context
     ) -> ScreenBudgetEntry {
@@ -29,7 +33,8 @@ struct ScreenBudgetProvider: TimelineProvider {
         ScreenBudgetEntry(
             date: Date(),
             usageMinutes: 95,
-            goalMinutes: 180
+            goalMinutes: 180,
+            lastUpdatedAt: Date()
         )
     }
 
@@ -92,10 +97,10 @@ struct ScreenBudgetProvider: TimelineProvider {
                 suiteName: appGroup
             )
 
-        let usageMinutes =
-            defaults?.double(
-                forKey: usageKey
-            ) ?? 0
+        let usageDate = defaults?.object(forKey: usageDateKey) as? Date
+        let isToday = usageDate.map { Calendar.current.isDateInToday($0) } ?? false
+        let usageMinutes = isToday ? (defaults?.double(forKey: usageKey) ?? 0) : 0
+        let lastUpdated = isToday ? (defaults?.object(forKey: lastUpdateKey) as? Date) : nil
 
         let savedGoal =
             defaults?.double(
@@ -110,7 +115,8 @@ struct ScreenBudgetProvider: TimelineProvider {
         return ScreenBudgetEntry(
             date: Date(),
             usageMinutes: usageMinutes,
-            goalMinutes: goalMinutes
+            goalMinutes: goalMinutes,
+            lastUpdatedAt: lastUpdated
         )
     }
 }
@@ -228,6 +234,17 @@ struct ScreenBudgetWidgetView: View {
                         ? .red
                         : .secondary
                 )
+
+                if let lastUpdatedAt = entry.lastUpdatedAt {
+                    Text("Updated \(lastUpdatedAt, style: .time)")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text("Awaiting update")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding(12)
@@ -314,12 +331,14 @@ private func formatDuration(
     ScreenBudgetEntry(
         date: Date(),
         usageMinutes: 95,
-        goalMinutes: 180
+        goalMinutes: 180,
+        lastUpdatedAt: Date()
     )
 
     ScreenBudgetEntry(
         date: Date(),
         usageMinutes: 215,
-        goalMinutes: 180
+        goalMinutes: 180,
+        lastUpdatedAt: Date()
     )
 }
