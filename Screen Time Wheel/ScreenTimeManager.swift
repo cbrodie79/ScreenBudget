@@ -57,9 +57,9 @@ final class ScreenTimeManager {
     func captureSnapshot(_ event: String, details: [String: Any] = [:]) {
         guard let defaults = UserDefaults(suiteName: Self.appGroup) else { return }
         var snapshot = details
-        snapshot["monitorArmedAt"] = (defaults.object(forKey: Self.armedAtKey) as? Date)?.timeIntervalSince1970 ?? NSNull()
-        snapshot["usageDate"] = (defaults.object(forKey: Self.usageDateKey) as? Date)?.timeIntervalSince1970 ?? NSNull()
-        snapshot["lastUsageUpdate"] = (defaults.object(forKey: Self.lastUpdateKey) as? Date)?.timeIntervalSince1970 ?? NSNull()
+        snapshot["monitorArmedAt"] = (defaults.object(forKey: Self.armedAtKey) as? Date)?.timeIntervalSince1970 ?? 0
+        snapshot["usageDate"] = (defaults.object(forKey: Self.usageDateKey) as? Date)?.timeIntervalSince1970 ?? 0
+        snapshot["lastUsageUpdate"] = (defaults.object(forKey: Self.lastUpdateKey) as? Date)?.timeIntervalSince1970 ?? 0
         snapshot["registeredMonitorCount"] = center.activities.count
         record(event, details: snapshot, defaults: defaults)
     }
@@ -272,6 +272,7 @@ final class ScreenTimeManager {
         let stale = center.activities.filter { $0.rawValue.hasPrefix("screenBudget-") }
         if !stale.isEmpty { center.stopMonitoring(stale) }
         log("New-day reset; stopped \(stale.count) old monitors", defaults: defaults)
+        let previousUsage = defaults.double(forKey: Self.usageKey)
         defaults.set(
             0.0,
             forKey: Self.usageKey
@@ -287,7 +288,7 @@ final class ScreenTimeManager {
             forKey: Self.activeActivityKey
         )
 
-        record("daily_reset", details: ["previousUsageMinutes": defaults.double(forKey: Self.usageKey)], defaults: defaults)
+        record("daily_reset", details: ["previousUsageMinutes": previousUsage], defaults: defaults)
         WidgetCenter.shared
             .reloadAllTimelines()
     }
