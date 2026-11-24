@@ -112,12 +112,39 @@ struct ScreenBudgetProvider: TimelineProvider {
                 ? savedGoal
                 : 120
 
-        return ScreenBudgetEntry(
+        let entry = ScreenBudgetEntry(
             date: Date(),
             usageMinutes: usageMinutes,
             goalMinutes: goalMinutes,
             lastUpdatedAt: lastUpdated
         )
+        if let defaults {
+            let payload: [String: Any] = [
+                "timestamp": Date().timeIntervalSince1970,
+                "source": "widget",
+                "event": "timeline_entry_loaded",
+                "usageMinutes": usageMinutes,
+                "rawUsageMinutes": defaults.double(forKey: usageKey),
+                "usageDateIsToday": isToday,
+                "goalMinutes": goalMinutes,
+                "lastUsageUpdate": lastUpdated?.timeIntervalSince1970 ?? 0
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]),
+               let line = String(data: data, encoding: .utf8) {
+                let key = "screenBudgetDiagnostics.widget"
+                let cutoff = Date().addingTimeInterval(-7 * 24 * 3600).timeIntervalSince1970
+                var entries = defaults.stringArray(forKey: key) ?? []
+                entries.append(line)
+                entries = entries.filter {
+                    guard let data = $0.data(using: .utf8),
+                          let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                          let timestamp = value["timestamp"] as? Double else { return false }
+                    return timestamp >= cutoff
+                }
+                defaults.set(Array(entries.suffix(3000)), forKey: key)
+            }
+        }
+        return entry
     }
 }
 
