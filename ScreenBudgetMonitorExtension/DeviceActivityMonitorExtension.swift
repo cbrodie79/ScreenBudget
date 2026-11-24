@@ -30,11 +30,29 @@ final class DeviceActivityMonitorExtension:
     private let diagnosticKey = "widgetMonitorDiagnostics"
 
     private func log(_ message: String, defaults: UserDefaults) {
-        let line = "\(Date()): monitor: \(message)"
-        var history = defaults.stringArray(forKey: diagnosticKey) ?? []
-        history.append(line)
-        defaults.set(Array(history.suffix(60)), forKey: diagnosticKey)
-        print(line)
+        let entry: [String: Any] = [
+            "timestamp": Date().timeIntervalSince1970,
+            "source": "monitor",
+            "event": message,
+            "usageMinutes": defaults.double(forKey: usageKey),
+            "generation": defaults.integer(forKey: generationKey),
+            "activity": defaults.string(forKey: activeActivityKey) ?? "",
+            "armedAt": (defaults.object(forKey: armedAtKey) as? Date)?.timeIntervalSince1970 ?? 0
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys]),
+              let line = String(data: data, encoding: .utf8) else { return }
+        let key = "screenBudgetDiagnostics.monitor"
+        let cutoff = Date().addingTimeInterval(-7 * 24 * 3600).timeIntervalSince1970
+        var entries = defaults.stringArray(forKey: key) ?? []
+        entries.append(line)
+        entries = entries.filter {
+            guard let data = $0.data(using: .utf8),
+                  let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let timestamp = value["timestamp"] as? Double else { return false }
+            return timestamp >= cutoff
+        }
+        defaults.set(Array(entries.suffix(3000)), forKey: key)
+        print("ScreenBudget monitor: \(message)")
     }
 
     /*
@@ -96,6 +114,7 @@ final class DeviceActivityMonitorExtension:
             return
         }
 
+        log("Threshold received event=\(event.rawValue) activity=\(activity.rawValue)", defaults: defaults)
         if resetForNewDayIfNeeded(defaults: defaults) {
             log("Threshold after day reset; rearming without count", defaults: defaults)
             rearmFreshEvent(replacing: activity, defaults: defaults)
@@ -315,7 +334,7 @@ final class DeviceActivityMonitorExtension:
             }
         }
 
-        log("New day reset", defaults: defaults)
+        log("New day reset from \(defaults.double(forKey: usageKey))m", defaults: defaults)
         defaults.removeObject(forKey: lastUpdateKey)
         defaults.set(
             0.0,
