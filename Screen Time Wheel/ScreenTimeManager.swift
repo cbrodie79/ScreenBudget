@@ -29,12 +29,68 @@ final class ScreenTimeManager {
     static let lastUpdateKey = "widgetUsageLastUpdatedAt"
     static let diagnosticKey = "widgetMonitorDiagnostics"
 
-    private func log(_ message: String, defaults: UserDefaults) {
-        let line = "\(Date()): app: \(message)"
-        var history = defaults.stringArray(forKey: Self.diagnosticKey) ?? []
+    private func record(_ event: String, details: [String: Any] = [:], defaults: UserDefaults) {
+        var entry: [String: Any] = [
+            "timestamp": Date().timeIntervalSince1970,
+            "source": "app",
+            "event": event,
+            "usageMinutes": defaults.double(forKey: Self.usageKey),
+            "generation": defaults.integer(forKey: Self.generationKey),
+            "activity": defaults.string(forKey: Self.activeActivityKey) ?? ""
+        ]
+        details.forEach { entry[$0.key] = $0.value }
+        guard let payload = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys]),
+              let line = String(data: payload, encoding: .utf8) else { return }
+        let key = "screenBudgetDiagnostics.app"
+        let cutoff = Date().addingTimeInterval(-7 * 24 * 3600).timeIntervalSince1970
+        var history = defaults.stringArray(forKey: key) ?? []
         history.append(line)
-        defaults.set(Array(history.suffix(60)), forKey: Self.diagnosticKey)
-        print(line)
+        history = history.filter {
+            guard let data = $0.data(using: .utf8),
+                  let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let timestamp = value["timestamp"] as? Double else { return false }
+            return timestamp >= cutoff
+        }
+        defaults.set(Array(history.suffix(3000)), forKey: key)
+    }
+
+    func captureSnapshot(_ event: String, details: [String: Any] = [:]) {
+        guard let defaults = UserDefaults(suiteName: Self.appGroup) else { return }
+        var snapshot = details
+        snapshot["monitorArmedAt"] = (defaults.object(forKey: Self.armedAtKey) as? Date)?.timeIntervalSince1970 ?? NSNull()
+        snapshot["usageDate"] = (defaults.object(forKey: Self.usageDateKey) as? Date)?.timeIntervalSince1970 ?? NSNull()
+        snapshot["lastUsageUpdate"] = (defaults.object(forKey: Self.lastUpdateKey) as? Date)?.timeIntervalSince1970 ?? NSNull()
+        snapshot["registeredMonitorCount"] = center.activities.count
+        record(event, details: snapshot, defaults: defaults)
+    }
+
+    func exportDiagnostics() -> URL? {
+        captureSnapshot("export_requested")
+        guard let defaults = UserDefaults(suiteName: Self.appGroup) else { return nil }
+        let keys = ["screenBudgetDiagnostics.app", "screenBudgetDiagnostics.monitor", "screenBudgetDiagnostics.widget"]
+        let cutoff = Date().addingTimeInterval(-7 * 24 * 3600).timeIntervalSince1970
+        let events: [[String: Any]] = keys.flatMap { defaults.stringArray(forKey: $0) ?? [] }
+            .compactMap { line in
+                guard let data = line.data(using: .utf8) else { return nil }
+                return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            }
+            .filter { ($0["timestamp"] as? Double ?? 0) >= cutoff }
+            .sorted { ($0["timestamp"] as? Double ?? 0) < ($1["timestamp"] as? Double ?? 0) }
+        let report: [String: Any] = [
+            "formatVersion": 1,
+            "exportedAt": Date().timeIntervalSince1970,
+            "retentionDays": 7,
+            "events": events
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("screenbudget-diagnostics-\(Int(Date().timeIntervalSince1970)).json")
+        do { try data.write(to: url, options: .atomic); return url }
+        catch { return nil }
+    }
+
+    private func log(_ message: String, defaults: UserDefaults) {
+        record(message, defaults: defaults)
+        print("ScreenBudget app: \(message)")
     }
 
     private let center =
@@ -70,6 +126,7 @@ final class ScreenTimeManager {
             return
         }
 
+        captureSnapshot("before_monitor_recovery")
         resetForNewDayIfNeeded(
             defaults: defaults
         )
@@ -230,6 +287,7 @@ final class ScreenTimeManager {
             forKey: Self.activeActivityKey
         )
 
+        record("daily_reset", details: ["previousUsageMinutes": defaults.double(forKey: Self.usageKey)], defaults: defaults)
         WidgetCenter.shared
             .reloadAllTimelines()
     }
